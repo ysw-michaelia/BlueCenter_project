@@ -19,10 +19,19 @@ class PreferencesManager(context: Context) {
         editor.putBoolean("isSetupCompleted", isCompleted)
         editor.apply()
     }
-
     //"get" function for isSetupCompleted
     fun isSetupComplete(): Boolean {
         return sharedPreferences.getBoolean("isSetupCompleted", false)
+    }
+
+    //function to set the number of channels
+    fun setNumberOfChannels(numberOfChannels: Int) {
+        editor.putInt("numberOfChannels", numberOfChannels)
+        editor.apply()
+    }
+    //"get" function for numberOfChannels
+    fun getNumberOfChannels(): Int {
+        return sharedPreferences.getInt("numberOfChannels", 1)
     }
 
     //reset everything in case of need
