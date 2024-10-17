@@ -13,7 +13,11 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,11 +74,34 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             DataLoggerTheme {
+                val bluetoothViewModel: BluetoothViewModel = viewModel()
+                val state by bluetoothViewModel.state.collectAsState()
+
+                LaunchedEffect(key1 = state.errorMessage) {
+                    state.errorMessage?.let { message ->
+                        Toast.makeText(
+                            applicationContext,
+                            message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                LaunchedEffect(key1 = state.isConnected) {
+                    if(state.isConnected) {
+                        Toast.makeText(
+                            applicationContext,
+                            "You're connected!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val bluetoothViewModel: BluetoothViewModel = viewModel()
+
                     DataLoggerApp(
                         bluetoothViewModel = bluetoothViewModel,
                         modifier = Modifier.padding(16.dp)

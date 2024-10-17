@@ -55,6 +55,7 @@ class ChannelViewModel(
         val channels = (1..numberOfChannels).map {
             Channel(name = "Channel $it")
         }
+        _channelCount.value = numberOfChannels
         //insert each channel in the created list
         channels.forEach { channel ->
             viewModelScope.launch {
@@ -72,7 +73,6 @@ class ChannelViewModel(
     fun upsertChannel(channel: Channel) {
         viewModelScope.launch {
             repository.upsertChannel(channel)
-            _channelCount.value = repository.channelCount().first()
             _channelList.value = repository.allChannels().first()
         }
 

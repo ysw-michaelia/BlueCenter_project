@@ -17,15 +17,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.datalogger.network.BluetoothDevice
+import com.example.datalogger.network.BluetoothDeviceDomain
 import com.example.datalogger.state.BluetoothUiState
+import com.example.datalogger.state.SetupViewModel
 
 //composable that will show all scanned and paired devices on screen
 @Composable
 fun BluetoothDevicesScreen(
+    setupViewModel: SetupViewModel,
     state: BluetoothUiState,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
-    modifier: Modifier = Modifier
+    onStartServer: () -> Unit,
+    onDeviceClick: (BluetoothDevice) -> Unit,
 
 ) {
     Column(
@@ -34,7 +38,7 @@ fun BluetoothDevicesScreen(
         BluetoothDeviceList(
             pairedDevices = state.pairedDevices,
             scannedDevices = state.scannedDevices,
-            onClick = {},
+            onClick = onDeviceClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -52,6 +56,12 @@ fun BluetoothDevicesScreen(
             Button(onClick = onStopScan) {
                 Text(text = "Stop scan")
             }
+            if(setupViewModel.isMaster.value!!) {
+                Button(onClick = onStartServer) {
+                    Text(text = "Start server")
+                }
+            }
+
         }
     }
 }
