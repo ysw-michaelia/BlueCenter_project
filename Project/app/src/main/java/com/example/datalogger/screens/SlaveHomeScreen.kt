@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
+import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
 import com.example.datalogger.state.SetupViewModel
 
@@ -44,6 +45,7 @@ fun SlaveHomeScreen(
     navController: NavController,
     setupViewModel: SetupViewModel,
     channelViewModel: ChannelViewModel,
+    bluetoothViewModel: BluetoothViewModel,
     modifier: Modifier = Modifier
 ) {
     //needed values to know the state of the database
@@ -78,6 +80,7 @@ fun SlaveHomeScreen(
                         onClick = {
                             setupViewModel.clearPreferences()
                             channelViewModel.deleteChannels()
+                            bluetoothViewModel.disconnectFromDevice()
                             navController.navigate("setup")
                         },
                         modifier = Modifier.padding(top = 40.dp, start = 100.dp)

@@ -77,26 +77,6 @@ class MainActivity : ComponentActivity() {
                 val bluetoothViewModel: BluetoothViewModel = viewModel()
                 val state by bluetoothViewModel.state.collectAsState()
 
-                LaunchedEffect(key1 = state.errorMessage) {
-                    state.errorMessage?.let { message ->
-                        Toast.makeText(
-                            applicationContext,
-                            message,
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-
-                LaunchedEffect(key1 = state.isConnected) {
-                    if(state.isConnected) {
-                        Toast.makeText(
-                            applicationContext,
-                            "You're connected!",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

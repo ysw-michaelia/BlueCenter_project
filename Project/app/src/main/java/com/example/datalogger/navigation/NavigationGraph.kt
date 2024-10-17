@@ -6,6 +6,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.datalogger.screens.ChannelSettingsScreen
 import com.example.datalogger.screens.MasterBluetoothScreen
 import com.example.datalogger.screens.MasterHomeScreen
 import com.example.datalogger.screens.SetupScreen
@@ -46,14 +47,25 @@ fun NavGraph(
             MasterHomeScreen(
                 navController = navController,
                 setupViewModel = setupViewModel,
-                channelViewModel = channelViewModel
+                channelViewModel = channelViewModel,
+                bluetoothViewModel = bluetoothViewModel
+            )
+        }
+        composable("channel_settings/{channelId}") { backStackEntry ->
+            val channelId = backStackEntry.arguments?.getString("channelId")?.toInt()
+            // Handle channelId if needed
+            ChannelSettingsScreen(
+                navController = navController,
+                channelViewModel = channelViewModel,
+                channelId = channelId!!
             )
         }
         composable("slave_home") {
             SlaveHomeScreen(
                 navController = navController,
                 setupViewModel = setupViewModel,
-                channelViewModel = channelViewModel
+                channelViewModel = channelViewModel,
+                bluetoothViewModel = bluetoothViewModel
             )
         }
         composable("master_bluetooth_settings") {

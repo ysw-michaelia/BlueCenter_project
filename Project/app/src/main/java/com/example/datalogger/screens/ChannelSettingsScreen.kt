@@ -67,7 +67,7 @@ fun ChannelSettingsScreen(
                             name = editedChannelName,
                             sensorName = editedSensorName,
                             sensorType = editedSensorType))
-                        navController.navigate("home")
+                        navController.navigate("slave_home")
                     }
                 ) {
                     Text(text = "Save")

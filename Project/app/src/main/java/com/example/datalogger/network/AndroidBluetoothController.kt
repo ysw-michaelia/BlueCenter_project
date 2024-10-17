@@ -51,8 +51,8 @@ class AndroidBluetoothController(
     override val pairedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _pairedDevices.asStateFlow()
 
-    private val _errors = MutableStateFlow<String>("")
-    override val errors: StateFlow<String>
+    private val _errors = MutableStateFlow<String?>(null)
+    override val errors: StateFlow<String?>
         get() = _errors.asStateFlow()
 
     private val foundDeviceReceiver = FoundDeviceReceiver { device->

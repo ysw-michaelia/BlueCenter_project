@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
 import com.example.datalogger.state.SetupViewModel
 
@@ -36,6 +37,7 @@ fun MasterHomeScreen(
     navController: NavController,
     setupViewModel: SetupViewModel,
     channelViewModel: ChannelViewModel,
+    bluetoothViewModel: BluetoothViewModel,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -64,6 +66,7 @@ fun MasterHomeScreen(
                         onClick = {
                             setupViewModel.clearPreferences()
                             channelViewModel.deleteChannels()
+                            bluetoothViewModel.disconnectFromDevice()
                             navController.navigate("setup")
                         },
                         modifier = Modifier.padding(top = 40.dp, start = 100.dp)

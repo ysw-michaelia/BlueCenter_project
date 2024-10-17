@@ -9,5 +9,6 @@ typealias BluetoothDeviceDomain = BluetoothDevice
 //not possible to connect to the same device type
 data class BluetoothDevice(
     val name: String?,
-    val address: String
+    val address: String,
 )
+
