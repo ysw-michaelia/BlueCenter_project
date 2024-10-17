@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    id("dagger.hilt.android.plugin")
     id("com.google.devtools.ksp")
 }
 
@@ -74,6 +75,11 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.7.3") // Jetpack Compose UI
     implementation("androidx.compose.material:material:1.7.3")
     implementation("androidx.navigation:navigation-compose:2.8.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("com.google.dagger:hilt-android:2.42")
+    ksp("com.google.dagger:hilt-android-compiler:2.42")
+    ksp("androidx.hilt:hilt-compiler:1.0.0")
+    implementation("androidx.activity:activity-ktx:1.6.0") // or newer
     implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

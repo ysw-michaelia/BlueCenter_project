@@ -23,18 +23,24 @@ class SetupViewModel(application: Application): AndroidViewModel(application) {
     }
     val isSetupCompleted: LiveData<Boolean> get() = _isSetupCompleted
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> get() = _errorMessage
+    private val _isMaster = MutableLiveData<Boolean>().apply {
+        value = preferencesManager.isMaster()
+    }
+    val isMaster: LiveData<Boolean> get() = _isMaster
+
+    fun setMaster(isMaster: Boolean) {
+        _isMaster.value = isMaster
+        preferencesManager.setMaster(isMaster)
+    }
 
     //function to set the number of channels, should also handle error input
     //but does not work as expected (copied from chatGPT)
     fun setNumberOfChannels(channels: String) {
         val channelCount = channels.toIntOrNull()
 
-        if (channelCount == null || channelCount < 1 || channelCount > 32) {
-            _errorMessage.value = "Please enter a number between 1 and 32."
+        if (channelCount == null) {
+            return
         } else {
-            _errorMessage.value = null // Clear error message
             _totChannels.value = channelCount
             preferencesManager.setNumberOfChannels(channelCount) // Save to PreferencesManager
         }
@@ -46,5 +52,8 @@ class SetupViewModel(application: Application): AndroidViewModel(application) {
         preferencesManager.setSetupComplete(completed)
     }
 
+    fun clearPreferences() {
+        preferencesManager.clearPreferences()
+    }
 
 }

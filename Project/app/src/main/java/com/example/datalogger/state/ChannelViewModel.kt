@@ -1,13 +1,11 @@
 package com.example.datalogger.state
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.datalogger.data.Channel
-import com.example.datalogger.data.Graph
+import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -16,7 +14,7 @@ import kotlinx.coroutines.launch
 
 //view model that holds the state of the channels
 class ChannelViewModel(
-    private val repository: ChannelRepository = Graph.repository
+    private val repository: ChannelRepository = DatabaseModule.repository
 ): ViewModel() {
 
     //variable for number of channels in the database

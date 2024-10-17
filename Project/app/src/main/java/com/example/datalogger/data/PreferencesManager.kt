@@ -24,6 +24,15 @@ class PreferencesManager(context: Context) {
         return sharedPreferences.getBoolean("isSetupCompleted", false)
     }
 
+    fun setMaster(isMaster: Boolean) {
+        editor.putBoolean("isMaster", isMaster)
+        editor.apply()
+    }
+
+    fun isMaster(): Boolean {
+        return sharedPreferences.getBoolean("isMaster", false)
+    }
+
     //function to set the number of channels
     fun setNumberOfChannels(numberOfChannels: Int) {
         editor.putInt("numberOfChannels", numberOfChannels)
