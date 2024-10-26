@@ -3,7 +3,6 @@ package com.example.datalogger.screens
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
-import com.example.datalogger.sensor.SensorController
 import com.example.datalogger.state.ChannelViewModel
 
 //screen for individual channel settings
@@ -38,10 +36,6 @@ fun ChannelSettingsScreen(
     channelViewModel: ChannelViewModel,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val sensorController = remember { SensorController(context) }
-    var selectedSensor by remember { mutableStateOf<Sensor?>(null) }
-    var isSensorRecording by remember { mutableStateOf(false) }
 
     //get the channel by id
     val channel = channelViewModel.getChannelById(channelId).collectAsState(initial = null).value
@@ -60,7 +54,6 @@ fun ChannelSettingsScreen(
             var editedChannelName by remember { mutableStateOf(channel.name) }
             var editedSensorType by remember { mutableStateOf(channel.sensorType) }
             var editedSensorName by remember { mutableStateOf(channel.sensorName) }
-
             Row() {
                 Text(
                     text = "${channel.name} settings: ",
@@ -80,7 +73,6 @@ fun ChannelSettingsScreen(
                     Text(text = "Save")
                 }
             }
-
             //info about the channel
             Row() {
                 Text("Channel Name: ")
@@ -95,52 +87,10 @@ fun ChannelSettingsScreen(
             Row() {
                 Text("Sensor: ${channel.sensorName}")
                 //dropdown menu to choose sensor
-                SensorDropdownMenu(
-                    sensorController = sensorController,
-                    onSensorSelected = { sensor ->
-                    selectedSensor = sensor
-                    editedSensorName = sensor.name
-                    editedSensorType = sensor.type
+                SensorDropdownMenu(onSensorSelected = { selectedSensor ->
+                    editedSensorName = selectedSensor.name
+                    editedSensorType = selectedSensor.type
                 })
-            }
-            Row() {
-                Button(
-                    onClick = {
-                        //start the sensor
-                        selectedSensor?.let { sensor ->
-                            if (!isSensorRecording) {
-                                sensorController.startSensor(sensor) { sensorData ->
-                                    Log.d("SensorData", sensorData.joinToString(", "))
-                                }
-                                isSensorRecording = true
-                            }
-                        }
-                    },
-                    enabled = !isSensorRecording
-                ) {
-                    Text("Start")
-                }
-
-                Button(
-                    onClick = {
-                        //Stop the sensor
-                        if (isSensorRecording) {
-                            sensorController.stopSensor()
-                            isSensorRecording = false
-                        }
-                    },
-                    enabled = isSensorRecording
-                ) {
-                    Text("Stop")
-                }
-
-                Button(
-                    onClick = {
-                        //start the sensor and record only once
-                    }
-                ) {
-                    Text("Once")
-                }
             }
         }
     }
@@ -149,13 +99,12 @@ fun ChannelSettingsScreen(
 //function that displays all sensors in a dropdown menu, copied from chatGPT
 @Composable
 fun SensorDropdownMenu(
-    sensorController: SensorController,
     modifier: Modifier = Modifier,
-    onSensorSelected: (Sensor) -> Unit,
+    onSensorSelected: (Sensor) -> Unit
 ) {
-    val availableSensors by remember {
-        mutableStateOf(sensorController.getAvailableSensors())
-    }
+    val context = LocalContext.current
+    val availableSensors = getAvailableSensors(context)  // Get list of sensors
+
     var expanded by remember { mutableStateOf(false) }  // Control menu expansion
     var selectedSensor by remember { mutableStateOf<Sensor?>(null) }  // Track selected sensor
 
@@ -186,4 +135,11 @@ fun SensorDropdownMenu(
             }
         }
     }
+}
+
+
+//function to get all available sensors
+fun getAvailableSensors(context: Context): List<Sensor> {
+    val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    return sensorManager.getSensorList(Sensor.TYPE_ALL)
 }
