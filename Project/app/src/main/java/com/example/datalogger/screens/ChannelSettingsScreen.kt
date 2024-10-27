@@ -137,7 +137,6 @@ fun SensorDropdownMenu(
     }
 }
 
-
 //function to get all available sensors
 fun getAvailableSensors(context: Context): List<Sensor> {
     val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
