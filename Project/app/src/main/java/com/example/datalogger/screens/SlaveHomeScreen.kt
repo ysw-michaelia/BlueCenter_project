@@ -135,7 +135,7 @@ fun ChannelCard(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier
 ) {
-    var isChecked by remember { mutableStateOf(channel.isActivated) }
+    var isChecked by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier

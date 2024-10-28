@@ -49,7 +49,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
                         Log.e("SensorError", "can't find sensor with type ${it.sensorType}")
                     }
                 } else {
-                    sensorController.stopSensor(it.sensorType)
+                    sensorController.stopSensor()
                 }
             }
         }
