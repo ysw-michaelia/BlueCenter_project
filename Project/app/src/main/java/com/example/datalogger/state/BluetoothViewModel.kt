@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 //bluetooth viewmodel, similar dependency handling as setup viewmodel
@@ -34,12 +35,14 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
     val state = combine (
         bluetoothController.scanDevices,
         bluetoothController.pairedDevices,
+        bluetoothController.connectedDevices,
         _state
     ) {
-        scanDevices, pairedDevices, state ->
+        scanDevices, pairedDevices, connectedDevices, state ->
         state.copy(
             scannedDevices = scanDevices,
-            pairedDevices = pairedDevices
+            pairedDevices = pairedDevices,
+            connectedDevices = connectedDevices
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
@@ -61,6 +64,12 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                 )
             }
         }.launchIn(viewModelScope)
+
+        viewModelScope.launch {
+            bluetoothController.connectedDevices.collect { devices ->
+                _state.update { it.copy(connectedDevices = devices) }
+            }
+        }
     }
 
     fun connectToDevice(device: BluetoothDeviceDomain) {
@@ -76,12 +85,14 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
         _state.update {
             it.copy(
                 isConnecting = false,
-                isConnected = false
+                isConnected = false,
+                isServerOpen = false,
+                connectedDevices = emptyList()
             ) }
     }
 
     fun waitForIncomingConnections() {
-        _state.update { it.copy(isConnecting = true) }
+        _state.update { it.copy(isServerOpen = true) }
         deviceConnectionJob = bluetoothController
             .startBluetoothServer()
             .listen()
@@ -92,6 +103,10 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
     }
     fun stopScan() {
         bluetoothController.stopDiscovery()
+    }
+
+    fun getBluetoothDevice(address: String): android.bluetooth.BluetoothDevice? {
+        return bluetoothController.getDeviceByAddress(address)
     }
 
     private fun Flow<ConnectionResult>.listen(): Job {

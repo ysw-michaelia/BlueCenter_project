@@ -7,6 +7,8 @@ import com.example.datalogger.network.BluetoothDevice
 data class BluetoothUiState(
     val scannedDevices: List<BluetoothDevice> = emptyList(),
     val pairedDevices: List<BluetoothDevice> = emptyList(),
+    val connectedDevices: List<BluetoothDevice> = emptyList(),
+    val isServerOpen: Boolean = false,
     val isConnected: Boolean = false,
     val isConnecting: Boolean = false,
     val errorMessage: String? = null,

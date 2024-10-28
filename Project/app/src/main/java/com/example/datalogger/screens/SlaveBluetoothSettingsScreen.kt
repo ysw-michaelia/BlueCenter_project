@@ -92,11 +92,10 @@ fun SlaveBluetoothScreen(
             }
             else -> {
                 BluetoothDevicesScreen(
-                    setupViewModel = setupViewModel,
                     state = state,
                     onStartScan = bluetoothViewModel::startScan,
                     onStopScan = bluetoothViewModel::stopScan,
-                    onStartServer = {},
+                    disconnectFromDevice = bluetoothViewModel::disconnectFromDevice,
                     onDeviceClick = bluetoothViewModel::connectToDevice
                 )
             }

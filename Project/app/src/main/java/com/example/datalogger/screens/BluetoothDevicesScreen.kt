@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,11 +27,10 @@ import com.example.datalogger.state.SetupViewModel
 //composable that will show all scanned and paired devices on screen
 @Composable
 fun BluetoothDevicesScreen(
-    setupViewModel: SetupViewModel,
     state: BluetoothUiState,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
-    onStartServer: () -> Unit,
+    disconnectFromDevice: () -> Unit,
     onDeviceClick: (BluetoothDevice) -> Unit,
 
 ) {
@@ -56,12 +58,13 @@ fun BluetoothDevicesScreen(
             Button(onClick = onStopScan) {
                 Text(text = "Stop scan")
             }
-            if(setupViewModel.isMaster.value!!) {
-                Button(onClick = onStartServer) {
-                    Text(text = "Start server")
-                }
+            val isEnabled by remember { mutableStateOf(state.isConnected) }
+            Button(
+                onClick = disconnectFromDevice,
+                enabled = isEnabled
+            ) {
+                Text(text = "Disconnect")
             }
-
         }
     }
 }

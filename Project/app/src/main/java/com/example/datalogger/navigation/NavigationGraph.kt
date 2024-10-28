@@ -7,7 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.datalogger.screens.ChannelSettingsScreen
-import com.example.datalogger.screens.MasterBluetoothScreen
+import com.example.datalogger.screens.DeviceConsoleScreen
 import com.example.datalogger.screens.MasterHomeScreen
 import com.example.datalogger.screens.SetupScreen
 import com.example.datalogger.screens.SlaveBluetoothScreen
@@ -16,7 +16,8 @@ import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
 import com.example.datalogger.state.SetupViewModel
 
-//navigation graph for the app
+//navigation graph for the app, it's the "first" thing that is called within the app
+// when it's launched to know where to go and it's called anytime screens change
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -68,20 +69,22 @@ fun NavGraph(
                 bluetoothViewModel = bluetoothViewModel
             )
         }
-        composable("master_bluetooth_settings") {
-            MasterBluetoothScreen(
-                navController = navController,
-                setupViewModel = setupViewModel,
-                channelViewModel = channelViewModel,
-                bluetoothViewModel = bluetoothViewModel
-            )
-        }
+
         composable("slave_bluetooth_settings") {
             SlaveBluetoothScreen(
                 navController = navController,
                 setupViewModel = setupViewModel,
                 channelViewModel = channelViewModel,
                 bluetoothViewModel = bluetoothViewModel
+            )
+        }
+        composable("device_console/{address}") { backStackEntry ->
+            val deviceAddress = backStackEntry.arguments?.getString("address")
+            val device = bluetoothViewModel.getBluetoothDevice(deviceAddress!!)
+            DeviceConsoleScreen(
+                navController = navController,
+                bluetoothViewModel = bluetoothViewModel,
+                device = device!!
             )
         }
         //future screens
