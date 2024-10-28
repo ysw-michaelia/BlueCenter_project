@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +39,7 @@ import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
 import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
+import com.example.datalogger.state.SensorViewModel
 import com.example.datalogger.state.SetupViewModel
 
 @Composable
@@ -46,6 +48,7 @@ fun SlaveHomeScreen(
     setupViewModel: SetupViewModel,
     channelViewModel: ChannelViewModel,
     bluetoothViewModel: BluetoothViewModel,
+    sensorViewModel: SensorViewModel,
     modifier: Modifier = Modifier
 ) {
     //needed values to know the state of the database
@@ -111,13 +114,16 @@ fun SlaveHomeScreen(
                                 //if any channel is long pressed, navigate to channel settings
                                 navController.navigate("channel_settings/${selectedChannel.channelId}")
                             },
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            onCheckedChange = { isChecked ->
+                                sensorViewModel.toggleMonitoring(channel.channelId, isChecked) // Call toggleMonitoring
+                            }
                         )
                     }
                 }
             }
-        })
-
+        }
+    )
 }
 
 
@@ -126,8 +132,11 @@ fun SlaveHomeScreen(
 fun ChannelCard(
     channel: Channel,
     onLongPress: (Channel) -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier
 ) {
+    var isChecked by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .padding(16.dp)
@@ -139,10 +148,21 @@ fun ChannelCard(
                 )
             }
     ) {
-        Text(
-            text = channel.name,
-            fontSize = 20.sp
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = channel.name,
+                fontSize = 20.sp
+            )
+            Checkbox(
+                checked = isChecked,
+                onCheckedChange = { checked ->
+                    isChecked = checked
+                    onCheckedChange(checked)
+                }
+            )
+        }
     }
 }
 

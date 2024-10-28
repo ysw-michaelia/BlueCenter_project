@@ -131,6 +131,15 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                         )
                     }
                 }
+
+                else -> {
+                    _state.update {
+                        it.copy(
+                            isConnected = false,
+                            isConnecting = false
+                        )
+                    }
+                }
             }
         }.catch { throwable ->
             bluetoothController.closeConnection()

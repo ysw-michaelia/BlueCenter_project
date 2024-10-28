@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.RadioButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -20,8 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -54,6 +59,8 @@ fun ChannelSettingsScreen(
             var editedChannelName by remember { mutableStateOf(channel.name) }
             var editedSensorType by remember { mutableStateOf(channel.sensorType) }
             var editedSensorName by remember { mutableStateOf(channel.sensorName) }
+            var dummySensorOutput by remember { mutableStateOf("0") }
+            var static by remember { mutableStateOf("False") }
             Row() {
                 Text(
                     text = "${channel.name} settings: ",
@@ -84,13 +91,42 @@ fun ChannelSettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = static == "False",
+                    onClick = { static = "False" }
+                )
+                Text("Sensor")
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = static == "True",
+                    onClick = { static = "True" }
+                )
+                Text("Static Digit")
+            }
             Row() {
-                Text("Sensor: ${channel.sensorName}")
-                //dropdown menu to choose sensor
-                SensorDropdownMenu(onSensorSelected = { selectedSensor ->
-                    editedSensorName = selectedSensor.name
-                    editedSensorType = selectedSensor.type
-                })
+                if (static == "True") {
+                    Text("Static digit: ")
+                    //text field to change the channel name
+                    TextField(
+                        value = dummySensorOutput,
+                        onValueChange = { dummySensorOutput = it },
+                        label = { Text("Edit Static Number") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                else{
+                    Text("Sensor: ${channel.sensorName}")
+                    //dropdown menu to choose sensor
+                    SensorDropdownMenu(onSensorSelected = { selectedSensor ->
+                        editedSensorName = selectedSensor.name
+                        editedSensorType = selectedSensor.type
+                    })
+                }
+
             }
         }
     }
@@ -136,7 +172,6 @@ fun SensorDropdownMenu(
         }
     }
 }
-
 
 //function to get all available sensors
 fun getAvailableSensors(context: Context): List<Sensor> {
