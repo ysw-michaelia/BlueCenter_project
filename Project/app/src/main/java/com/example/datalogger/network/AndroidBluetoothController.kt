@@ -10,7 +10,10 @@ import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.util.Log
 import com.example.datalogger.data.PreferencesManager
+import com.example.datalogger.data.console.BluetoothCommand
+import com.example.datalogger.data.console.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -18,8 +21,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -63,6 +70,8 @@ class AndroidBluetoothController(
     private val _connectedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
     override val connectedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _connectedDevices.asStateFlow()
+
+    private val dataTransferServices = mutableMapOf<String, BluetoothDataTransferService>()
 
     //actual clients (sockets) connected
     private val connectedClients = mutableListOf<BluetoothSocket>()
@@ -139,7 +148,7 @@ class AndroidBluetoothController(
     //function that starts bluetooth server (only for master)
     //it makes the master hold a server where multiple slave sockets can connect to it
     override fun startBluetoothServer(): Flow<ConnectionResult> {
-        return flow {
+        return channelFlow {
             if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
                 !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 throw SecurityException("No permission")
@@ -158,20 +167,40 @@ class AndroidBluetoothController(
 
                     clientSocket?.let { socket ->
 
-                        emit(ConnectionResult.ConnectionEstablished)
-
-
+                        send(ConnectionResult.ConnectionEstablished)
+                        Log.d("BluetoothService", "connected")
                         connectedClients.add(socket)
                         _connectedDevices.update { it + socket.remoteDevice.toBluetoothDeviceDomain() }
 
                         //this will be the coroutine that manages the connection with one client
-                        CoroutineScope(Dispatchers.IO).launch {
-                            manageClientConnection(socket)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val device = socket.remoteDevice
+                                val service = BluetoothDataTransferService(socket)
+                                dataTransferServices[device.address] = service
+
+                                service.listenForIncomingString()
+                                    .collect { incomingString ->
+                                        Log.d("ricevuto", incomingString)
+                                        send(ConnectionResult.StringReceived(incomingString, device.address))
+                                    }
+//                            emitAll(
+//                                merge(
+//                                    service.listenForIncomingString().map {
+//                                        Log.d("ricevuto", it)
+//                                        ConnectionResult.StringReceived(it, device.address)
+//                                    },
+//                                    service.listenForIncomingFile().map {
+//                                        ConnectionResult.FileReceived(it, device.address)
+//                                    }
+//                                )
+//                            )
+                            Log.d("BluetoothService", "Emission complete in startBluetoothServer()")
+
                         }
                     }
                 } catch (e: IOException) {
                     shouldLoop = false
-                    emit(ConnectionResult.Error("Server socket error: ${e.message}"))
+                    send(ConnectionResult.Error("Server socket error: ${e.message}"))
                     closeConnection()
                 }
             }
@@ -211,8 +240,20 @@ class AndroidBluetoothController(
                             socket.connect() // Attempt connection
                         }
                     }
+
+                    val service = BluetoothDataTransferService(socket)
+                    dataTransferServices[device.address] = service
+
                     // Use withTimeout to avoid hanging indefinitely
                     emit(ConnectionResult.ConnectionEstablished)
+
+                    emitAll(
+                        service
+                            .listenForIncomingCommand()
+                            .map {
+                                ConnectionResult.StringReceived(it, device.address)
+                            }
+                    )
 
                 } catch (e: IOException) {
                     // Handle connection errors
@@ -230,19 +271,56 @@ class AndroidBluetoothController(
 
     }
 
-    private suspend fun manageClientConnection(clientSocket: BluetoothSocket) {
-        try {
-            handleCommunication(clientSocket)
-        } catch (e: IOException) {
-            _errors.emit("Connection interrupted: ${e.message}")
-            onClientDisconnect(clientSocket)
-            clientSocket.close()
+    override suspend fun trySendCommand(command: String, deviceAddress: String): BluetoothCommand? {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return null
         }
+
+        val service = dataTransferServices[deviceAddress]
+        if(service == null) {
+            return null
+        }
+
+        val command = BluetoothCommand(command)
+
+        service.sendString(command.toByteArray())
+
+        return command
     }
 
-    // Handle communication with a slave device (this can be specific to your application)
-    private suspend fun handleCommunication(clientSocket: BluetoothSocket) {
-        // Implement communication logic here
+    override suspend fun trySendFile(fileData: ByteArray, deviceAddress: String): String? {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return null
+        }
+
+        val service = dataTransferServices[deviceAddress]
+
+        if(service == null) {
+            return null
+        }
+
+        service.sendFile(fileData)
+
+        return "File sent successfully"
+
+    }
+
+    override suspend fun trySendStringReply(message: String, deviceAddress: String): String? {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return null
+        }
+
+        val service = dataTransferServices[deviceAddress] ?: return null
+
+        service.sendString(message.toByteArray())
+
+        return message
     }
 
     fun getSocketForDevice(deviceDomain: BluetoothDeviceDomain): BluetoothSocket? {

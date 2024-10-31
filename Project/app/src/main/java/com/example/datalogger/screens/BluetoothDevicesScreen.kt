@@ -1,5 +1,6 @@
 package com.example.datalogger.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,10 +13,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +38,16 @@ fun BluetoothDevicesScreen(
     onDeviceClick: (BluetoothDevice) -> Unit,
 
 ) {
+    val context = LocalContext.current
+    var wasConnected by remember { mutableStateOf(state.isConnected) }
+
+// Check if the connection state changed from connected to disconnected
+    LaunchedEffect(state.isConnected) {
+        if (wasConnected && !state.isConnected) {
+            Toast.makeText(context, "You're disconnected", Toast.LENGTH_SHORT).show()
+        }
+        wasConnected = state.isConnected // Update the last known connection state
+    }
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -45,6 +59,17 @@ fun BluetoothDevicesScreen(
                 .fillMaxWidth()
                 .weight(1f)
         )
+        val messages = state.receivedCommands ?: emptyList()
+        if (messages.isEmpty()) {
+            Text("No messages")
+        } else {
+            // Display the messages
+            LazyColumn {
+                items(messages) { message ->
+                    Text(message)
+                }
+            }
+        }
         //this row holds two buttons that can either start or stop the scan
         Row(
             modifier = Modifier
@@ -58,7 +83,7 @@ fun BluetoothDevicesScreen(
             Button(onClick = onStopScan) {
                 Text(text = "Stop scan")
             }
-            val isEnabled by remember { mutableStateOf(state.isConnected) }
+            val isEnabled = state.isConnected
             Button(
                 onClick = disconnectFromDevice,
                 enabled = isEnabled

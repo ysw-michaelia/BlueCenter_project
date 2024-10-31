@@ -1,10 +1,12 @@
 package com.example.datalogger.state
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.datalogger.data.console.BluetoothCommand
 import com.example.datalogger.network.AndroidBluetoothController
 import com.example.datalogger.network.BluetoothController
 import com.example.datalogger.network.BluetoothDevice
@@ -42,7 +44,9 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
         state.copy(
             scannedDevices = scanDevices,
             pairedDevices = pairedDevices,
-            connectedDevices = connectedDevices
+            connectedDevices = connectedDevices,
+            messages = if(state.isServerOpen) state.messages else emptyMap(),
+            receivedCommands = if(state.isConnected) state.receivedCommands else emptyList()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
@@ -93,9 +97,41 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
     fun waitForIncomingConnections() {
         _state.update { it.copy(isServerOpen = true) }
-        deviceConnectionJob = bluetoothController
-            .startBluetoothServer()
-            .listen()
+        viewModelScope.launch {
+            Log.d("BluetoothViewModel", "start")
+            bluetoothController.startBluetoothServer()
+                .collect { result ->
+                    Log.d("BluetoothViewModel", "Collected result: $result")
+                    when (result) {
+                        // handle cases
+
+                        ConnectionResult.ConnectionEstablished -> TODO()
+                        is ConnectionResult.Error -> TODO()
+                        is ConnectionResult.FileReceived -> TODO()
+                        is ConnectionResult.StringReceived -> TODO()
+                    }
+                }
+        }
+    }
+
+    fun sendCommand(command: String, deviceAddress: String) {
+        viewModelScope.launch {
+            val bluetoothCommand = bluetoothController.trySendCommand(command, deviceAddress)
+//            if (bluetoothCommand != null) {
+//                _state.update { it.copy(sentCommands = it.sentCommands + bluetoothCommand) }
+//            }
+        }
+    }
+
+    fun sendStringReply(message: String, deviceAddress: String) {
+        viewModelScope.launch {
+            val reply = bluetoothController.trySendStringReply(message, deviceAddress)
+        }
+    }
+
+    //future function to send file
+    fun sendFile(fileData: ByteArray) {
+        TODO()
     }
 
     fun startScan() {
@@ -110,8 +146,13 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
     }
 
     private fun Flow<ConnectionResult>.listen(): Job {
+
+        Log.d("we're out", "onEach dentro")
         return onEach { result ->
+            Log.d("we're in", "onEach dentro")
+
             when (result) {
+
                 ConnectionResult.ConnectionEstablished -> {
                     _state.update {
                         it.copy(
@@ -132,16 +173,28 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                     }
                 }
 
-                else -> {
-                    _state.update {
-                        it.copy(
-                            isConnected = false,
-                            isConnecting = false
+                is ConnectionResult.StringReceived -> {
+                    _state.update { currentState->
+                        val currentMessages = currentState.messages[result.deviceAddress] ?: emptyList()
+
+                        // Add the new message to the list for that device
+                        val updatedMessages = currentMessages + result.message
+
+                        val updatedMessagesMap = currentState.messages.toMutableMap().apply {
+                            this[result.deviceAddress] = updatedMessages
+                        }
+
+                        currentState.copy(
+                            messages = updatedMessagesMap,
                         )
                     }
                 }
+
+                is ConnectionResult.FileReceived -> TODO()
+
             }
         }.catch { throwable ->
+            Log.d("flow.", "catch dentro")
             bluetoothController.closeConnection()
             _state.update {
                 it.copy(

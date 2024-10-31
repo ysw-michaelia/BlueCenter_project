@@ -17,4 +17,5 @@ class ChannelRepository(
     suspend fun upsertChannel(channel: Channel) = dao.upsertChannel(channel)
 
     suspend fun deleteAllChannels() = dao.deleteAllChannels()
-    }
+
+}
