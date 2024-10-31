@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.datalogger.network.BluetoothController
 import com.example.datalogger.state.BluetoothViewModel
+import com.example.datalogger.state.SensorViewModel
 import com.example.datalogger.ui.theme.DataLoggerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
