@@ -1,20 +1,12 @@
 package com.example.datalogger.state
 
 import android.app.Application
-import androidx.lifecycle.ViewModel
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.datalogger.data.Channel
-import com.example.datalogger.data.ChannelDao
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
 import com.example.datalogger.sensor.SensorController
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 

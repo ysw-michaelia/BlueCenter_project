@@ -3,6 +3,7 @@ package com.example.datalogger.network
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.example.datalogger.data.console.BluetoothCommand
 
 //interface for bluetooth controller that will be implemented by AndroidBluetoothController
 interface BluetoothController {
@@ -19,6 +20,10 @@ interface BluetoothController {
     fun getDeviceByAddress(address: String): android.bluetooth.BluetoothDevice?
     fun startBluetoothServer(): Flow<ConnectionResult>
     fun connectToDevice(device: BluetoothDevice): Flow<ConnectionResult>
+
+    suspend fun trySendCommand(command: String, deviceAddress: String): BluetoothCommand?
+    suspend fun trySendFile(fileData: ByteArray, deviceAddress: String): String?
+    suspend fun trySendStringReply(message: String, deviceAddress: String): String?
 
     fun closeConnection()
     fun release()

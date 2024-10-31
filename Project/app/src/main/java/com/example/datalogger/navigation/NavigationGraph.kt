@@ -31,8 +31,6 @@ fun NavGraph(
     val isSetupCompleted by setupViewModel.isSetupCompleted.observeAsState(false)
     val isMaster by setupViewModel.isMaster.observeAsState(false)
 
-
-
     //determine the start destination based on the setup
     val startDestination = when {
         !isSetupCompleted -> "setup"
@@ -89,7 +87,10 @@ fun NavGraph(
             DeviceConsoleScreen(
                 navController = navController,
                 bluetoothViewModel = bluetoothViewModel,
-                device = device!!
+                device = device!!,
+                onSendCommand = { command ->
+                    bluetoothViewModel.sendCommand(command, deviceAddress)
+                }
             )
         }
         //future screens
