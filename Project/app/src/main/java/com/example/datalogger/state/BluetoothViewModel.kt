@@ -97,21 +97,10 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
     fun waitForIncomingConnections() {
         _state.update { it.copy(isServerOpen = true) }
-        viewModelScope.launch {
-            Log.d("BluetoothViewModel", "start")
-            bluetoothController.startBluetoothServer()
-                .collect { result ->
-                    Log.d("BluetoothViewModel", "Collected result: $result")
-                    when (result) {
-                        // handle cases
 
-                        ConnectionResult.ConnectionEstablished -> TODO()
-                        is ConnectionResult.Error -> TODO()
-                        is ConnectionResult.FileReceived -> TODO()
-                        is ConnectionResult.StringReceived -> TODO()
-                    }
-                }
-        }
+        deviceConnectionJob = bluetoothController
+            .startBluetoothServer()
+            .listen()
     }
 
     fun sendCommand(command: String, deviceAddress: String) {

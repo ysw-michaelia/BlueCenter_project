@@ -147,68 +147,53 @@ class AndroidBluetoothController(
 
     //function that starts bluetooth server (only for master)
     //it makes the master hold a server where multiple slave sockets can connect to it
-    override fun startBluetoothServer(): Flow<ConnectionResult> {
-        return channelFlow {
-            if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
-                !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                throw SecurityException("No permission")
-            }
+    override fun startBluetoothServer(): Flow<ConnectionResult> = channelFlow {
+        // Ensure permissions
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            throw SecurityException("No permission")
+        }
 
-            currentServerSocket = bluetoothAdapter?.listenUsingInsecureRfcommWithServiceRecord(
-                "data_sharing_service",
-                UUID.fromString(SERVICE_UUID)
-            )
+        // Listen on the server socket
+        currentServerSocket = bluetoothAdapter?.listenUsingInsecureRfcommWithServiceRecord(
+            "data_sharing_service",
+            UUID.fromString(SERVICE_UUID)
+        )
 
-            var shouldLoop = true
-            while (shouldLoop) {
-                try {
+        var isServerOpen = true // Server connection state
 
-                    val clientSocket = currentServerSocket?.accept()
+        while (isServerOpen) {
+            try {
+                // Accept client connection
+                val clientSocket = currentServerSocket?.accept() ?: continue
+                send(ConnectionResult.ConnectionEstablished)
+                connectedClients.add(clientSocket)
+                _connectedDevices.update { it + clientSocket.remoteDevice.toBluetoothDeviceDomain() }
 
-                    clientSocket?.let { socket ->
+                // Process each client connection
+                launch {
+                    val device = clientSocket.remoteDevice
+                    val service = BluetoothDataTransferService(clientSocket)
+                    dataTransferServices[device.address] = service
 
-                        send(ConnectionResult.ConnectionEstablished)
-                        Log.d("BluetoothService", "connected")
-                        connectedClients.add(socket)
-                        _connectedDevices.update { it + socket.remoteDevice.toBluetoothDeviceDomain() }
-
-                        //this will be the coroutine that manages the connection with one client
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val device = socket.remoteDevice
-                                val service = BluetoothDataTransferService(socket)
-                                dataTransferServices[device.address] = service
-
-                                service.listenForIncomingString()
-                                    .collect { incomingString ->
-                                        Log.d("ricevuto", incomingString)
-                                        send(ConnectionResult.StringReceived(incomingString, device.address))
-                                    }
-//                            emitAll(
-//                                merge(
-//                                    service.listenForIncomingString().map {
-//                                        Log.d("ricevuto", it)
-//                                        ConnectionResult.StringReceived(it, device.address)
-//                                    },
-//                                    service.listenForIncomingFile().map {
-//                                        ConnectionResult.FileReceived(it, device.address)
-//                                    }
-//                                )
-//                            )
-                            Log.d("BluetoothService", "Emission complete in startBluetoothServer()")
-
-                        }
+                    // Handle incoming data from client
+                    service.listenForIncomingString().collect { incomingString ->
+                        Log.d("BluetoothService", "Received string: $incomingString from ${device.address}")
+                        send(ConnectionResult.StringReceived(incomingString, device.address))
                     }
-                } catch (e: IOException) {
-                    shouldLoop = false
-                    send(ConnectionResult.Error("Server socket error: ${e.message}"))
-                    closeConnection()
-                }
-            }
-        }.onCompletion {
-            closeConnection() // Cleanup on flow completion
-        }.flowOn(Dispatchers.IO) // Ensure the flow runs on the IO dispatcher
-    }
 
+                    service.listenForIncomingFile().collect { incomingFile ->
+                        send(ConnectionResult.FileReceived(incomingFile, device.address))
+                    }
+                }
+
+            } catch (e: IOException) {
+                send(ConnectionResult.Error("Server socket error: ${e.message}"))
+                closeConnection()
+                isServerOpen = false // End the loop if an error occurs
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 
     //function to connect to a master (used by slave)
     override fun connectToDevice(device: BluetoothDeviceDomain): Flow<ConnectionResult> {
