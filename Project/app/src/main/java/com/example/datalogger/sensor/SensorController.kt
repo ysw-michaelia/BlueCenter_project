@@ -9,7 +9,7 @@ import java.io.File
 
 class SensorController(private val context: Context) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val activeSensorListeners = mutableMapOf<Int, Pair<SensorEventListener, Int>>() // 传感器类型到监听器和计数器的映射
+    private val activeSensorListeners = mutableMapOf<Int, Pair<SensorEventListener, Int>>()
 
     fun getSensorByType(sensorType: Int): Sensor? {
         return sensorManager.getDefaultSensor(sensorType)

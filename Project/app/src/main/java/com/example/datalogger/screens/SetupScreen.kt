@@ -8,13 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.RadioButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +36,9 @@ fun SetupScreen(
     //holds the role
     var selectedRole by remember { mutableStateOf("Master") }
 
+    //holds the timestamp
+    var selectedTimeStamp by remember { mutableStateOf("Master Timestamp") }
+
     Text(
         modifier = modifier.padding(40.dp),
         text = "SETUP DEVICE",
@@ -48,7 +50,11 @@ fun SetupScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Choose Role")
+        Text(text = "Step 1: Choose Role",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
@@ -65,12 +71,42 @@ fun SetupScreen(
             )
             Text("Slave")
         }
-       if(selectedRole == "Slave") {
-           SlaveSetupPart(viewModel, navController)
-       }
-        else {
+        Spacer(
+            modifier = modifier.padding(16.dp)
+        )
+        if (selectedRole == "Master") {
+            Text(
+                text = "Step 2: Master Configuration",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            Text("Choose Timestamp Source")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = selectedTimeStamp == "Master Timestamp",
+                    onClick = { selectedTimeStamp = "Master Timestamp" }
+                )
+                Text("Master Timestamp")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = selectedTimeStamp == "Slave Timestamp",
+                    onClick = { selectedTimeStamp = "Slave Timestamp" }
+                )
+                Text("Slave Timestamp")
+            }
             MasterSetupPart(viewModel, navController)
-       }
+        } else {
+            Text(
+                text = "Step 2: Slave Configuration",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            Text("Fill in the required number of channels")
+            SlaveSetupPart(viewModel, navController)
+        }
     }
 }
 
