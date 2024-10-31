@@ -10,7 +10,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.datalogger.navigation.NavGraph
 import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
-import com.example.datalogger.state.SensorViewModel
 import com.example.datalogger.state.SetupViewModel
 
 
@@ -24,8 +23,8 @@ fun DataLoggerApp(
 
     //initialize needed viewModels and the variable that checks if setup is completed
     val setupViewModel: SetupViewModel = viewModel()
-    val sensorViewModel: SensorViewModel = viewModel()
     val channelViewModel: ChannelViewModel = viewModel()
 
-    NavGraph(navController, setupViewModel, channelViewModel, bluetoothViewModel, sensorViewModel)
+    NavGraph(navController, setupViewModel, channelViewModel, bluetoothViewModel)
+
 }

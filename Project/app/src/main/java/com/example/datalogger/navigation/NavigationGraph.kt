@@ -14,7 +14,6 @@ import com.example.datalogger.screens.SlaveBluetoothScreen
 import com.example.datalogger.screens.SlaveHomeScreen
 import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.ChannelViewModel
-import com.example.datalogger.state.SensorViewModel
 import com.example.datalogger.state.SetupViewModel
 
 //navigation graph for the app, it's the "first" thing that is called within the app
@@ -24,14 +23,11 @@ fun NavGraph(
     navController: NavHostController,
     setupViewModel: SetupViewModel,
     channelViewModel: ChannelViewModel,
-    bluetoothViewModel: BluetoothViewModel,
-    sensorViewModel: SensorViewModel
+    bluetoothViewModel: BluetoothViewModel
 ) {
     //observe needed values
     val isSetupCompleted by setupViewModel.isSetupCompleted.observeAsState(false)
     val isMaster by setupViewModel.isMaster.observeAsState(false)
-
-
 
     //determine the start destination based on the setup
     val startDestination = when {
@@ -70,8 +66,7 @@ fun NavGraph(
                 navController = navController,
                 setupViewModel = setupViewModel,
                 channelViewModel = channelViewModel,
-                bluetoothViewModel = bluetoothViewModel,
-                sensorViewModel = sensorViewModel
+                bluetoothViewModel = bluetoothViewModel
             )
         }
 
@@ -89,7 +84,10 @@ fun NavGraph(
             DeviceConsoleScreen(
                 navController = navController,
                 bluetoothViewModel = bluetoothViewModel,
-                device = device!!
+                device = device!!,
+                onSendCommand = { command ->
+                    bluetoothViewModel.sendCommand(command, deviceAddress)
+                }
             )
         }
         //future screens

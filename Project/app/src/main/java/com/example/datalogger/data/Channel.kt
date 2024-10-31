@@ -15,7 +15,5 @@ data class Channel(
     @ColumnInfo(name = "channel_sensor")
     var sensorName: String = "None", //info about sensors for further use
     @ColumnInfo(name = "channel_sensor_type")
-    var sensorType: Int = 0, //info about sensors for further use
-    @ColumnInfo(name = "is_activated")
-    var isActivated: Boolean = false, //track activation status
+    var sensorType: Int = 0 //info about sensors for further use
     )
