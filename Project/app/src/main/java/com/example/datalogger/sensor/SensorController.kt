@@ -5,7 +5,6 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import java.io.File
 
 class SensorController(private val context: Context) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -56,11 +55,5 @@ class SensorController(private val context: Context) {
             }
         }
         return listener to 0
-    }
-
-    fun saveSensorDataToFile(context: Context, data: String) {
-        val fileName = "log_data.txt"
-        val file = File(context.filesDir, fileName)
-        file.appendText("$data\n")
     }
 }

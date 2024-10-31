@@ -137,7 +137,7 @@ fun ChannelCard(
 ) {
     var isChecked by remember { mutableStateOf(channel.isActivated) }
 
-    Box(
+     Box(
         modifier = Modifier
             .padding(16.dp)
             .pointerInput(Unit) {
