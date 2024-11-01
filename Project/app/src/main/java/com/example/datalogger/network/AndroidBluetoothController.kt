@@ -35,6 +35,7 @@ class AndroidBluetoothController(
     private val context: Context
 ): BluetoothController {
 
+    private val commandInterpreter = CommandInterpreter()
     //manager and adapter for bluetooth
     private val bluetoothManager by lazy {
         context.getSystemService(BluetoothManager::class.java)
@@ -138,11 +139,58 @@ class AndroidBluetoothController(
 
     //function that starts bluetooth server (only for master)
     //it makes the master hold a server where multiple slave sockets can connect to it
+<<<<<<< Updated upstream
     override fun startBluetoothServer(): Flow<ConnectionResult> {
         return flow {
             if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
                 !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 throw SecurityException("No permission")
+=======
+    override fun startBluetoothServer(): Flow<ConnectionResult> = channelFlow {
+        // Ensure permissions
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            throw SecurityException("No permission")
+        }
+
+        // Listen on the server socket
+        currentServerSocket = bluetoothAdapter?.listenUsingInsecureRfcommWithServiceRecord(
+            "data_sharing_service",
+            UUID.fromString(SERVICE_UUID)
+        )
+
+        var isServerOpen = true // Server connection state
+
+        while (isServerOpen) {
+            try {
+                // Accept client connection
+                val clientSocket = currentServerSocket?.accept() ?: continue
+                send(ConnectionResult.ConnectionEstablished)
+                connectedClients.add(clientSocket)
+                _connectedDevices.update { it + clientSocket.remoteDevice.toBluetoothDeviceDomain() }
+
+                // Process each client connection
+                launch {
+                    val device = clientSocket.remoteDevice
+                    val service = BluetoothDataTransferService(clientSocket, commandInterpreter)
+                    dataTransferServices[device.address] = service
+
+                    // Handle incoming data from client
+                    service.listenForIncomingString().collect { incomingString ->
+                        Log.d("BluetoothService", "Received string: $incomingString from ${device.address}")
+                        send(ConnectionResult.StringReceived(incomingString, device.address))
+                    }
+
+                    service.listenForIncomingFile().collect { incomingFile ->
+                        send(ConnectionResult.FileReceived(incomingFile, device.address))
+                    }
+                }
+
+            } catch (e: IOException) {
+                send(ConnectionResult.Error("Server socket error: ${e.message}"))
+                closeConnection()
+                isServerOpen = false // End the loop if an error occurs
+>>>>>>> Stashed changes
             }
 
             currentServerSocket = bluetoothAdapter?.listenUsingInsecureRfcommWithServiceRecord(
@@ -211,6 +259,13 @@ class AndroidBluetoothController(
                             socket.connect() // Attempt connection
                         }
                     }
+<<<<<<< Updated upstream
+=======
+
+                    val service = BluetoothDataTransferService(socket, commandInterpreter)
+                    dataTransferServices[device.address] = service
+
+>>>>>>> Stashed changes
                     // Use withTimeout to avoid hanging indefinitely
                     emit(ConnectionResult.ConnectionEstablished)
 

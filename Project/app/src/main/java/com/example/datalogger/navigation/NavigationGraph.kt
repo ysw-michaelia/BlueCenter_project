@@ -6,8 +6,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.datalogger.screens.ChannelSettingsScreen
 import com.example.datalogger.screens.DeviceConsoleScreen
+import com.example.datalogger.screens.ChannelSettingsScreen
 import com.example.datalogger.screens.MasterHomeScreen
 import com.example.datalogger.screens.SetupScreen
 import com.example.datalogger.screens.SlaveBluetoothScreen
