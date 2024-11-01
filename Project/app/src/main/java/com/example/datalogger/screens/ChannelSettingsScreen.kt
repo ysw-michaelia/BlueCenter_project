@@ -1,21 +1,29 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.datalogger.screens
 
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
+import android.widget.TimePicker
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.RadioButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
 import com.example.datalogger.state.ChannelViewModel
+import java.util.Calendar
 
 //screen for individual channel settings
 @Composable
@@ -59,8 +68,17 @@ fun ChannelSettingsScreen(
             var editedChannelName by remember { mutableStateOf(channel.name) }
             var editedSensorType by remember { mutableStateOf(channel.sensorType) }
             var editedSensorName by remember { mutableStateOf(channel.sensorName) }
-            var dummySensorOutput by remember { mutableStateOf("0") }
-            var static by remember { mutableStateOf("False") }
+            var dummySensorOutput by remember { mutableStateOf(channel.staticValue) }
+            var newStartTime by remember { mutableStateOf(channel.startTime) }
+            var newStopTime by remember { mutableStateOf(channel.stopTime) }
+            var static by remember { mutableStateOf(false) }
+            var timeKeeping by remember { mutableStateOf("single") }
+            var begHour by remember { mutableStateOf("") }
+            var begMinute by remember { mutableStateOf("") }
+            var begSecond by remember { mutableStateOf("") }
+            var endHour by remember { mutableStateOf("") }
+            var endMinute by remember { mutableStateOf("") }
+            var endSecond by remember { mutableStateOf("") }
             Row() {
                 Text(
                     text = "${channel.name} settings: ",
@@ -93,26 +111,26 @@ fun ChannelSettingsScreen(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = static == "False",
-                    onClick = { static = "False" }
+                    selected = static == false,
+                    onClick = { static = false }
                 )
                 Text("Sensor")
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = static == "True",
-                    onClick = { static = "True" }
+                    selected = static == true,
+                    onClick = { static = true }
                 )
                 Text("Static Digit")
             }
             Row() {
-                if (static == "True") {
+                if (static) {
                     Text("Static digit: ")
-                    //text field to change the channel name
+                    //text field to change the static digit
                     TextField(
-                        value = dummySensorOutput,
-                        onValueChange = { dummySensorOutput = it },
+                        value = dummySensorOutput.toString(),
+                        onValueChange = { dummySensorOutput = it.toFloat() },
                         label = { Text("Edit Static Number") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
@@ -126,7 +144,92 @@ fun ChannelSettingsScreen(
                         editedSensorType = selectedSensor.type
                     })
                 }
+            }
 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = timeKeeping == "single",
+                    onClick = { timeKeeping = "single" }
+                )
+                Text("No timestamp")
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = timeKeeping == "timestamp",
+                    onClick = { timeKeeping = "timestamp" }
+                )
+                Text("Timestamp")
+            }
+
+            //Question: Should the timestamp be based on a real clock or based on the sensor?
+            if ((timeKeeping == "timestamp")){
+                Row {
+                    Text("Beginning Timestamp: ")
+                }
+                Row {
+                    //text field to change the start time
+                    TextField(
+                        value = begHour,
+                        onValueChange = { begHour = it },
+                        label = { Text("Hour") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                    Text(":")
+                    TextField(
+                        value = begMinute,
+                        onValueChange = { begMinute = it },
+                        label = { Text("Edit Minute") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                    Text(":")
+                    TextField(
+                        value = begSecond,
+                        onValueChange = { begSecond = it },
+                        label = { Text("Edit Second") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                }
+                Row {
+                    Text("Ending Timestamp: ")
+                }
+                Row {
+                    //text field to change the timer
+                    TextField(
+                        value = endHour,
+                        onValueChange = { endHour = it },
+                        label = { Text("Edit Hour") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                    Text(":")
+                    TextField(
+                        value = endMinute,
+                        onValueChange = { endMinute = it },
+                        label = { Text("Edit Minute") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                    Text(":")
+                    TextField(
+                        value = endSecond,
+                        onValueChange = { endSecond = it },
+                        label = { Text("Edit Second") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1F)
+                    )
+                }
+                Row {
+                    Button(onClick = {
+                        newStartTime = "$begHour:$begMinute:$begSecond"
+                        newStopTime = "$endHour:$endMinute:$endSecond"
+                    }) {
+                        Text("Submit Timestamps")
+                    }
+                }
             }
         }
     }
@@ -172,6 +275,8 @@ fun SensorDropdownMenu(
         }
     }
 }
+
+
 
 //function to get all available sensors
 fun getAvailableSensors(context: Context): List<Sensor> {

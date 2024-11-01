@@ -18,4 +18,10 @@ data class Channel(
     var sensorType: Int = 0, //info about sensors for further use
     @ColumnInfo(name = "is_activated")
     var isActivated: Boolean = false, //track activation status
+    @ColumnInfo(name = "static_value")
+    var staticValue: Float = 0F, //static value, if needs to be referenced
+    @ColumnInfo(name = "start_time")
+    var startTime: String = "00:00:00", //start time
+    @ColumnInfo(name = "stop_time")
+    var stopTime: String = "00:00:00", //stop time
     )
