@@ -57,6 +57,7 @@ fun MasterHomeScreen(
     val context = LocalContext.current
     var previousDeviceCount by remember { mutableStateOf(state.connectedDevices.size) }
 
+
     LaunchedEffect(state.connectedDevices.size) {
         if (state.connectedDevices.size < previousDeviceCount) {
             Toast.makeText(context, "A device disconnected", Toast.LENGTH_SHORT).show()
@@ -159,4 +160,6 @@ fun DeviceCard(
         )
     }
 }
+
+
 

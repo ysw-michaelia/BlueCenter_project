@@ -121,12 +121,10 @@ fun ChannelSettingsScreen(
                 else{
                     Text("Sensor: ${channel.sensorName}")
                     //dropdown menu to choose sensor
-                    if(channel.sensorType == 0) {
-                        SensorDropdownMenu(onSensorSelected = { selectedSensor ->
-                            editedSensorName = selectedSensor.name
-                            editedSensorType = selectedSensor.type
-                        })
-                    }
+                    SensorDropdownMenu(onSensorSelected = { selectedSensor ->
+                        editedSensorName = selectedSensor.name
+                        editedSensorType = selectedSensor.type
+                    })
                 }
 
             }

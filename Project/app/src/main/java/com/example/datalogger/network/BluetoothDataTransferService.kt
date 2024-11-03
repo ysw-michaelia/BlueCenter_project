@@ -1,7 +1,9 @@
 package com.example.datalogger.network
 
 import android.bluetooth.BluetoothSocket
+import android.hardware.Sensor
 import android.util.Log
+import com.example.datalogger.sensor.SensorController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -10,8 +12,12 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 class BluetoothDataTransferService(
-    private val socket: BluetoothSocket
+    private val socket: BluetoothSocket, context: android.content.Context,
+
 ) {
+    private val sensorController = SensorController(context)
+    private val commandHandler = CommandHandler(sensorController)
+
     fun listenForIncomingString(): Flow<String> {
         return flow {
             if (!socket.isConnected) {
@@ -38,6 +44,7 @@ class BluetoothDataTransferService(
     fun listenForIncomingCommand(): Flow<String> {
         return flow {
             if (!socket.isConnected) {
+                Log.e("BluetoothDataTransferService", "Socket is not connected")
                 return@flow
             }
             val buffer = ByteArray(1024)
@@ -47,12 +54,15 @@ class BluetoothDataTransferService(
                 val byteCount = try {
                     socket.inputStream.read(buffer)
                 } catch (e: IOException) {
+                    Log.e("BluetoothDataTransferService", "Error reading command: ${e.message}")
                     emit("Error reading command: ${e.message}")
                 }
                 if (byteCount == -1) {
+                    Log.e("BluetoothDataTransferService", "Disconnected from socket")
                     break // Exit the loop if disconnected
                 }
                 val receivedCommand = buffer.copyOfRange(0, byteCount as Int).decodeToString()
+                Log.d("BluetoothDataTransferService", "Received command: $receivedCommand")
 
                 emit(receivedCommand)
 
@@ -63,20 +73,40 @@ class BluetoothDataTransferService(
     }
 
     private suspend fun handleCommand(command: String) {
-        val response = when (command) {
-            "ciao" -> "Potato"
+        Log.d("BluetoothService", "Received command: $command")
+        val response = when {
+            command.startsWith("[a,") -> {
+                commandHandler.handleSetSamplingRateCommand(command)
+            }
+//            command == "[START_SAMPLING]" -> {
+//                startSampling()
+//                "Sampling started.\nOK"
+//            }
+            command == "ciao" -> "Potato"
             else -> "Unknown command"
         }
 
         // Send the response back to the master
         sendString(response.toByteArray())
+        Log.d("BluetoothService", "Sent response: $response")
     }
+
+//    private fun startSampling() {
+//        if (!sensorsStarted) {
+//            startSensors()
+//            sensorsStarted = true
+//        }
+//    }
+
 
     suspend fun sendString(bytes: ByteArray): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 socket.outputStream.write(bytes)
-                            } catch (e: IOException) {
+                Log.d("BluetoothDataTransferService", "Sent string: ${bytes.decodeToString()}")
+
+            } catch (e: IOException) {
+                Log.e("BluetoothDataTransferService", "Error sending string: ${e.message}")
                 e.printStackTrace()
                 return@withContext false
             }
@@ -110,4 +140,14 @@ class BluetoothDataTransferService(
         }
     }
 
+//    fun startSensors() {
+//        val accelerometer = sensorController?.getSensorByType(Sensor.TYPE_ACCELEROMETER)
+//        if (accelerometer != null) {
+//            sensorController.startSensor(accelerometer) { data ->
+//                Log.d("SensorData", "Accelerometer data: ${data.contentToString()}")
+//            }
+//        } else {
+//            Log.e("BluetoothDataTransferService", "Accelerometer sensor not available")
+//        }
+//    }
 }

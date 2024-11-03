@@ -105,7 +105,13 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
     fun sendCommand(command: String, deviceAddress: String) {
         viewModelScope.launch {
+            Log.d("BluetoothViewModel", "Attempting to send command: $command to $deviceAddress")
             val bluetoothCommand = bluetoothController.trySendCommand(command, deviceAddress)
+            if (bluetoothCommand != null) {
+                Log.d("BluetoothViewModel", "Command sent successfully")
+            } else {
+                Log.e("BluetoothViewModel", "Failed to send command")
+            }
 //            if (bluetoothCommand != null) {
 //                _state.update { it.copy(sentCommands = it.sentCommands + bluetoothCommand) }
 //            }
@@ -117,7 +123,10 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
             val reply = bluetoothController.trySendStringReply(message, deviceAddress)
         }
     }
-
+    fun sendSamplingRateCommand(samplingRate: Int, deviceAddress: String) {
+        val command = "[a,$samplingRate]"
+        sendCommand(command, deviceAddress)
+    }
     //future function to send file
     fun sendFile(fileData: ByteArray) {
         TODO()
@@ -143,6 +152,8 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
             when (result) {
 
                 ConnectionResult.ConnectionEstablished -> {
+                    Log.d("BluetoothViewModel", "Connected to master")
+
                     _state.update {
                         it.copy(
                             isConnected = true,
@@ -153,6 +164,8 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                 }
 
                 is ConnectionResult.Error -> {
+                    Log.e("BluetoothViewModel", "Connection error: ${result.message}")
+
                     _state.update {
                         it.copy(
                             isConnected = false,
@@ -163,6 +176,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                 }
 
                 is ConnectionResult.StringReceived -> {
+                    Log.d("BluetoothViewModel", "Received message from ${result.deviceAddress}: ${result.message}")
                     _state.update { currentState->
                         val currentMessages = currentState.messages[result.deviceAddress] ?: emptyList()
 
@@ -183,7 +197,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
             }
         }.catch { throwable ->
-            Log.d("flow.", "catch dentro")
+            Log.e("BluetoothViewModel", "Error in connection flow: ${throwable.message}")
             bluetoothController.closeConnection()
             _state.update {
                 it.copy(

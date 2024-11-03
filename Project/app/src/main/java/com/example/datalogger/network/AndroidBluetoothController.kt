@@ -173,7 +173,7 @@ class AndroidBluetoothController(
                 // Process each client connection
                 launch {
                     val device = clientSocket.remoteDevice
-                    val service = BluetoothDataTransferService(clientSocket)
+                    val service = BluetoothDataTransferService(clientSocket, context)
                     dataTransferServices[device.address] = service
 
                     // Handle incoming data from client
@@ -226,7 +226,7 @@ class AndroidBluetoothController(
                         }
                     }
 
-                    val service = BluetoothDataTransferService(socket)
+                    val service = BluetoothDataTransferService(socket, context)
                     dataTransferServices[device.address] = service
 
                     // Use withTimeout to avoid hanging indefinitely
@@ -260,11 +260,15 @@ class AndroidBluetoothController(
         if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
             !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
         ) {
+            Log.e("BluetoothController", "Missing necessary permissions")
             return null
         }
+        Log.d("BluetoothController", "Available devices: ${dataTransferServices.keys}")
+        Log.d("BluetoothController", "Attempting to send to: $deviceAddress")
 
         val service = dataTransferServices[deviceAddress]
         if(service == null) {
+            Log.e("BluetoothController", "No data transfer service for device: $deviceAddress")
             return null
         }
 
