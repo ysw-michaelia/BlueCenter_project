@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
 import com.example.datalogger.state.ChannelViewModel
+import java.sql.Timestamp
 import java.util.Calendar
 
 //screen for individual channel settings
@@ -75,10 +76,10 @@ fun ChannelSettingsScreen(
             var timeKeeping by remember { mutableStateOf("single") }
             var begHour by remember { mutableStateOf("") }
             var begMinute by remember { mutableStateOf("") }
-            var begSecond by remember { mutableStateOf("") }
             var endHour by remember { mutableStateOf("") }
             var endMinute by remember { mutableStateOf("") }
-            var endSecond by remember { mutableStateOf("") }
+            var firstError by remember { mutableStateOf(false) }
+            var secondError by remember { mutableStateOf(false) }
             Row() {
                 Text(
                     text = "${channel.name} settings: ",
@@ -184,14 +185,6 @@ fun ChannelSettingsScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1F)
                     )
-                    Text(":")
-                    TextField(
-                        value = begSecond,
-                        onValueChange = { begSecond = it },
-                        label = { Text("Edit Second") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
                 }
                 Row {
                     Text("Ending Timestamp: ")
@@ -213,23 +206,40 @@ fun ChannelSettingsScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1F)
                     )
-                    Text(":")
-                    TextField(
-                        value = endSecond,
-                        onValueChange = { endSecond = it },
-                        label = { Text("Edit Second") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
+
                 }
                 Row {
                     Button(onClick = {
-                        newStartTime = "$begHour:$begMinute:$begSecond"
-                        newStopTime = "$endHour:$endMinute:$endSecond"
+                        if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
+                            firstError = true
+                        }
+                        else if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || begMinute.toInt() < 0) {
+                            secondError = true
+                        }
+                        if (!firstError && !secondError) {
+                            newStartTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE),begHour.toInt(),begMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
+                            if (begHour.toInt() > endHour.toInt() || begHour.toInt() == endHour.toInt() && begMinute.toInt() >= endMinute.toInt()) {
+                                newStopTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE)+1,endHour.toInt(),endMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
+                            }
+                            else {
+                                newStopTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE),endHour.toInt(),endMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
+                            }
+                        }
                     }) {
                         Text("Submit Timestamps")
                     }
                 }
+                if (firstError) {
+                    Row {
+                        Text("ERROR: Beginning time stamp invalid, hours must be between 0-23, minutes must be between 0-59")
+                    }
+                }
+                if (secondError) {
+                    Row {
+                        Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59")
+                    }
+                }
+
             }
         }
     }

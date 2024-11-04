@@ -1,8 +1,12 @@
 package com.example.datalogger.data
 
+import android.icu.util.Calendar
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import java.sql.Timestamp
 
 //data class used in the database for the channels
 @Entity(tableName = "channels")
@@ -20,8 +24,14 @@ data class Channel(
     var isActivated: Boolean = false, //track activation status
     @ColumnInfo(name = "static_value")
     var staticValue: Float = 0F, //static value, if needs to be referenced
-    @ColumnInfo(name = "start_time")
-    var startTime: String = "00:00:00", //start time
-    @ColumnInfo(name = "stop_time")
-    var stopTime: String = "00:00:00", //stop time
+    @ColumnInfo (name = "start_time")
+    @field:TypeConverters(TimeStampConverter::class)
+    var startTime: Timestamp = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE), Calendar.getInstance().get(Calendar.HOUR),Calendar.getInstance().get(Calendar.MINUTE),Calendar.getInstance().get(Calendar.SECOND),Calendar.getInstance().get(Calendar.MILLISECOND)),
+    @ColumnInfo (name = "stop_time")
+    var stopTime: Timestamp = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE), Calendar.getInstance().get(Calendar.HOUR),Calendar.getInstance().get(Calendar.MINUTE),Calendar.getInstance().get(Calendar.SECOND),Calendar.getInstance().get(Calendar.MILLISECOND)),
     )
+
+class TimeStampConverter {
+    @TypeConverter
+    fun fromTimeStamp(value: Timestamp): Date
+}
