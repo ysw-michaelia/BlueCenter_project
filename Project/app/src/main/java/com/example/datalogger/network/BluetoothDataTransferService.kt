@@ -68,10 +68,12 @@ class BluetoothDataTransferService(
     }
 
     private suspend fun handleCommand(command: String) {
-        val response = commandInterpreter.interpret(command)
+        val responses = commandInterpreter.interpret(command)
 
+        responses.forEach { response ->
+            sendString(response.toByteArray())
+        }
         // Send the response back to the master
-        sendString(response.toByteArray())
     }
 
     suspend fun sendString(bytes: ByteArray): Boolean {
@@ -114,16 +116,4 @@ class BluetoothDataTransferService(
         }
     }
 
-    suspend fun sendTimestamp(): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val timestamp = System.currentTimeMillis().toString()
-                socket.outputStream.write(timestamp.toByteArray())
-                true
-            } catch (e: IOException) {
-                e.printStackTrace()
-                false
-            }
-        }
-    }
 }

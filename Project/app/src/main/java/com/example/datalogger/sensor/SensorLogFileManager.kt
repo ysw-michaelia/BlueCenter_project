@@ -12,7 +12,7 @@ class SensorLogFileManager(private val context: Context) {
     private var fileOutputStream: FileOutputStream? = null
     private var fileIndex = 1
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS", Locale.getDefault())
-    private var isRecording = false
+    var isRecording = false
 
     //create file with unique name and file header
     fun createFile(channels: List<String>) {

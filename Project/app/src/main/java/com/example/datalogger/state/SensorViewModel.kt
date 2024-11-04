@@ -1,9 +1,7 @@
 package com.example.datalogger.state
 
 import android.app.Application
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.datalogger.di.DatabaseModule
@@ -13,8 +11,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 //Future view model that will be used to store the state of the sensors
-@RequiresApi(Build.VERSION_CODES.O_MR1)
-class SensorViewModel(application: Application) : AndroidViewModel(application) {
+class SensorViewModel(application: Application): AndroidViewModel(application) {
     private val sensorController = SensorController(application)
     private val channelRepository: ChannelRepository = DatabaseModule.repository
 
