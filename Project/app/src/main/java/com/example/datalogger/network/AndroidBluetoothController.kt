@@ -78,7 +78,9 @@ class AndroidBluetoothController(
         _connectedDevices.update { currentDevices ->
             currentDevices.filterNot { it.address == socket.remoteDevice.address }
         }
+        activeConnections[socket.remoteDevice.address]?.close()
         activeConnections.remove(socket.remoteDevice.address)
+        dataTransferServices.remove(socket.remoteDevice.address)
         clientDisconnectCallback(socket.remoteDevice.address)
         try {
             socket.close()
@@ -182,6 +184,10 @@ class AndroidBluetoothController(
             try {
                 // Accept client connection
                 val clientSocket = currentServerSocket?.accept() ?: continue
+
+                Log.d("BluetoothService", "Client connected: ${clientSocket.remoteDevice.name} at address: ${clientSocket.remoteDevice.address}")
+
+
                 send(ConnectionResult.ConnectionEstablished(clientSocket.remoteDevice.address))
                 connectedClients.add(clientSocket)
                 _connectedDevices.update { it + clientSocket.remoteDevice.toBluetoothDeviceDomain() }

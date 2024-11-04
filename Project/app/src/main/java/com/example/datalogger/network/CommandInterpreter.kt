@@ -1,15 +1,18 @@
 package com.example.datalogger.network
 
 
-import com.example.datalogger.state.SensorViewModel
-import kotlinx.coroutines.runBlocking
+import com.example.datalogger.state.BluetoothViewModel
+
+class CommandInterpreter(
+
+) {
 
 class CommandInterpreter(
     private val sensorViewModel: SensorViewModel
 ) {
     private var samples: Int = 0
 
-    fun interpret(command: String): String {
+    fun interpret(command: String): MutableList<String> {
         val commandType = command.take(2)
         val parameters = command.drop(3)
 
@@ -28,92 +31,95 @@ class CommandInterpreter(
             "[q" -> setStreamingRate(parameters)
             "[s" -> stopSampling()
             "[v" -> showVersion()
-            else -> "Error: Unsupported Command"
+            else -> mutableListOf("Error: Unsupported Command")
         }
     }
 
-    private fun setSamplingRate(params: String): String {
-        val rate = params.toIntOrNull() ?: return "Error: Invalid rate"
-        return "FREQ=$rate\nOK"
+    private fun setSamplingRate(params: String): MutableList<String> {
+        val rate = params.toIntOrNull() ?: return mutableListOf("Error: Invalid rate")
+        return mutableListOf("FREQ=$rate\nOK")
     }
 
-    private fun setNumberOfSamples(params: String): String {
-        samples = params.toIntOrNull() ?: return "Error: Invalid sample number"
-        return "SAMPLES=$samples\nOK"
+    private fun setNumberOfSamples(params: String): MutableList<String> {
+        val samples = params.toIntOrNull() ?: return mutableListOf("Error: Invalid sample number")
+        return mutableListOf("SAMPLES=$samples\nOK")
     }
 
-    private fun setSamplingConfiguration(params: String): String {
+    private fun setSamplingConfiguration(params: String): MutableList<String> {
         val (dataFormat, transmitAfterSampling, externalTrigger, timestamp) = params.split(":")
-        return "OK"
+        return mutableListOf("OK")
     }
 
-    private fun sampleAndTransferData(): String {
+    private fun sampleAndTransferData(): MutableList<String> {
         return runBlocking {
             if (sensorViewModel.isAnyChannelMonitoring()) {
                 sensorViewModel.startSampling(samples)
-                "SAMPLING\n" + sensorViewModel.getAndClearSampledData()
+
+                val sampledData = sensorViewModel.getAndClearSampledData()
+                sampledData.add("END")
+                return sampledData
             } else {
-                "sampling failed, please start monitoring sensor first."
+              return mutableListOf("sampling failed, please start monitoring sensor first.")
             }
         }
     }
 
-    private fun sendSampledData(): String {
+    private fun sendSampledData(): MutableList<String> {
         //return "DATA:\n$data\nEND"
-        return "DATA"
+        return mutableListOf("DATA")
     }
 
-    private fun setClock(params: String): String {
+    private fun setClock(params: String): MutableList<String> {
         val parts = params.split("-")
 
-        val year = parts.getOrNull(0)?.toIntOrNull() ?: return "Error: Invalid year"
-        val month = parts.getOrNull(1)?.toIntOrNull() ?: return "Error: Invalid month"
-        val day = parts.getOrNull(2)?.toIntOrNull() ?: return "Error: Invalid day"
-        val hour = parts.getOrNull(3)?.toIntOrNull() ?: return "Error: Invalid hour"
-        val minute = parts.getOrNull(4)?.toIntOrNull() ?: return "Error: Invalid minute"
-        val second = parts.getOrNull(5)?.toIntOrNull() ?: return "Error: Invalid second"
+        val year = parts.getOrNull(0)?.toIntOrNull() ?: return mutableListOf("Error: Invalid year")
+        val month = parts.getOrNull(1)?.toIntOrNull() ?: return mutableListOf("Error: Invalid month")
+        val day = parts.getOrNull(2)?.toIntOrNull() ?: return mutableListOf("Error: Invalid day")
+        val hour = parts.getOrNull(3)?.toIntOrNull() ?: return mutableListOf("Error: Invalid hour")
+        val minute = parts.getOrNull(4)?.toIntOrNull() ?: return mutableListOf("Error: Invalid minute")
+        val second = parts.getOrNull(5)?.toIntOrNull() ?: return mutableListOf("Error: Invalid second")
 
-        return "Clock set: $hour:$minute:$second, Date:$day/$month, Year:$year\nStatus:Ready.\nOK"
+        return mutableListOf("Clock set: $hour:$minute:$second, Date:$day/$month, Year:$year\nStatus:Ready.\nOK")
     }
 
-    private fun showDeviceStatus(): String {
+    private fun showDeviceStatus(): MutableList<String> {
         //return "Frequency: ${status.frequency}\nSamples: ${status.samples}\nNr of active channels: ${status.activeChannels}\nStatus: ${status.status}\nOK"
-        return "status"
+        return mutableListOf("status")
     }
 
-    private fun setWaitTime(params: String): String {
-        val seconds = params.toIntOrNull() ?: return "Error: Invalid wait time"
+    private fun setWaitTime(params: String): MutableList<String> {
+        val seconds = params.toIntOrNull() ?: return mutableListOf("Error: Invalid wait time")
         //return "Seconds=$seconds\nOK"
-        return "second"
+        return mutableListOf("second")
     }
 
-    private fun displayTime(): String {
+    private fun displayTime(): MutableList<String> {
         //return "Clock set: ${currentTime.time}, Date:${currentTime.date}\nOK"
-        return "TIME"
+        return mutableListOf("TIME")
     }
 
-    private fun setActiveChannels(params: String): String {
+    private fun setActiveChannels(params: String): MutableList<String> {
         val channels = params.split(":").map { it.toInt() }
-        return "Active channels set\nOK"
+        return mutableListOf("Active channels set\nOK")
     }
 
-    private fun showMode(): String {
-        return "showing"
+    private fun showMode(): MutableList<String> {
+        return mutableListOf("showing")
     }
 
-    private fun setStreamingRate(params: String): String {
-        val rate = params.toIntOrNull() ?: return "Error: Invalid streaming rate"
+    private fun setStreamingRate(params: String): MutableList<String> {
+        val rate = params.toIntOrNull() ?: return mutableListOf("Error: Invalid streaming rate")
 
         //return "Streaming rate set to $rate Hz\nOK"
-        return "rate"
+        return mutableListOf("rate")
     }
 
-    private fun stopSampling(): String {
+    private fun stopSampling(): MutableList<String>{
 
-        return "Sampling stopped\nOK"
+        return mutableListOf("Sampling stopped\nOK")
     }
 
-    private fun showVersion(): String {
-        return "DataLogger App Version: 1.0.0\nOK"
+    private fun showVersion(): MutableList<String> {
+        return mutableListOf("DataLogger App Version: 1.0.0\nOK")
     }
 }
