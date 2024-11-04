@@ -173,7 +173,7 @@ fun ChannelSettingsScreen(
                     TextField(
                         value = begHour,
                         onValueChange = { begHour = it },
-                        label = { Text("Hour") },
+                        label = { Text("Edit Hour") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1F)
                     )
@@ -210,7 +210,7 @@ fun ChannelSettingsScreen(
                 }
                 Row {
                     Button(onClick = {
-                        if (begHour != "" || begMinute != "" || endHour != "" || endMinute != "") {
+                        if (begHour != "" &&  begMinute != "" && endHour != "" &&  endMinute != "" && begHour.all { c: Char -> c.isDigit() } && begMinute.all { c: Char -> c.isDigit()} && endHour.all { c: Char -> c.isDigit() } && endMinute.all { c: Char -> c.isDigit() }) {
                             if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
                                 firstError = true
                             }
@@ -240,6 +240,20 @@ fun ChannelSettingsScreen(
                                 newStopTime = "$endHour:$endMinute"
                             }
                         }
+                        else {
+                            if (begHour != "" || begHour != null || begMinute != "" || begMinute != null || begHour.all { c: Char -> c.isDigit() } || begMinute.all { c: Char -> c.isDigit()}) {
+                                firstError = true
+                            }
+                            else {
+                                firstError = false
+                            }
+                            if (endHour != "" || endHour != null || endMinute != "" || endMinute != null || endHour.all { c: Char -> c.isDigit() } || endMinute.all { c: Char -> c.isDigit() }) {
+                                secondError = true
+                            }
+                            else {
+                                secondError = false
+                            }
+                        }
 
                     }) {
                         Text("Submit Timestamps")
@@ -247,12 +261,12 @@ fun ChannelSettingsScreen(
                 }
                 if (firstError) {
                     Row {
-                        Text("ERROR: Beginning time stamp invalid, hours must be between 0-23, minutes must be between 0-59")
+                        Text("ERROR: Beginning time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
                     }
                 }
                 if (secondError) {
                     Row {
-                        Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59")
+                        Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
                     }
                 }
 
