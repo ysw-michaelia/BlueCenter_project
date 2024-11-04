@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -90,12 +92,22 @@ fun SlaveBluetoothScreen(
                     Text("Connecting...")
                 }
             }
+            state.isConnected -> {
+                val isEnabled by remember { mutableStateOf(state.isConnected) }
+                Column() {
+                    Text(text = "Connected to the master")
+                    Button(
+                        onClick = bluetoothViewModel::disconnectFromDevice,
+                    ) {
+                        Text(text = "Disconnect")
+                    }
+                }
+            }
             else -> {
                 BluetoothDevicesScreen(
                     state = state,
                     onStartScan = bluetoothViewModel::startScan,
                     onStopScan = bluetoothViewModel::stopScan,
-                    disconnectFromDevice = bluetoothViewModel::disconnectFromDevice,
                     onDeviceClick = bluetoothViewModel::connectToDevice
                 )
             }
