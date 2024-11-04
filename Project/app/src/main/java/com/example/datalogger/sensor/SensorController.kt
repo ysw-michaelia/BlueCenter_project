@@ -5,10 +5,26 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
+import android.os.ParcelFileDescriptor
+import android.os.SharedMemory
+import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O_MR1)
 class SensorController(private val context: Context) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val activeSensorListeners = mutableMapOf<Int, Pair<SensorEventListener, Int>>()
+
+//    private lateinit var sharedMemory: SharedMemory
+//    private lateinit var parcelFileDescriptor: ParcelFileDescriptor
+//
+//    init {
+//        sharedMemory = SharedMemory.create("sensor_shared_memory", 1024 * 1024) // 1MB
+//        parcelFileDescriptor = SharedMemory.fromFileDescriptor(fd: ParcelFileDescriptor)
+//    }
 
     fun getSensorByType(sensorType: Int): Sensor? {
         return sensorManager.getDefaultSensor(sensorType)
@@ -47,7 +63,9 @@ class SensorController(private val context: Context) {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 // callback
-                onDataReceived(event.values)
+                CoroutineScope(Dispatchers.IO).launch {
+                    onDataReceived(event.values)
+                }
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

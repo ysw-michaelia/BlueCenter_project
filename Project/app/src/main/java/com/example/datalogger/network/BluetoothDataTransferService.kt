@@ -110,4 +110,16 @@ class BluetoothDataTransferService(
         }
     }
 
+    suspend fun sendTimestamp(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val timestamp = System.currentTimeMillis().toString()
+                socket.outputStream.write(timestamp.toByteArray())
+                true
+            } catch (e: IOException) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
 }
