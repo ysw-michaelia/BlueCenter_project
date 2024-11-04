@@ -25,13 +25,7 @@ data class Channel(
     @ColumnInfo(name = "static_value")
     var staticValue: Float = 0F, //static value, if needs to be referenced
     @ColumnInfo (name = "start_time")
-    @field:TypeConverters(TimeStampConverter::class)
-    var startTime: Timestamp = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE), Calendar.getInstance().get(Calendar.HOUR),Calendar.getInstance().get(Calendar.MINUTE),Calendar.getInstance().get(Calendar.SECOND),Calendar.getInstance().get(Calendar.MILLISECOND)),
+    var startTime: String = "",
     @ColumnInfo (name = "stop_time")
-    var stopTime: Timestamp = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE), Calendar.getInstance().get(Calendar.HOUR),Calendar.getInstance().get(Calendar.MINUTE),Calendar.getInstance().get(Calendar.SECOND),Calendar.getInstance().get(Calendar.MILLISECOND)),
-    )
-
-class TimeStampConverter {
-    @TypeConverter
-    fun fromTimeStamp(value: Timestamp): Date
-}
+    var stopTime: String = "",
+)

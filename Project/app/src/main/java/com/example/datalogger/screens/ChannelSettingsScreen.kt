@@ -210,21 +210,37 @@ fun ChannelSettingsScreen(
                 }
                 Row {
                     Button(onClick = {
-                        if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
-                            firstError = true
-                        }
-                        else if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || begMinute.toInt() < 0) {
-                            secondError = true
-                        }
-                        if (!firstError && !secondError) {
-                            newStartTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE),begHour.toInt(),begMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
-                            if (begHour.toInt() > endHour.toInt() || begHour.toInt() == endHour.toInt() && begMinute.toInt() >= endMinute.toInt()) {
-                                newStopTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE)+1,endHour.toInt(),endMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
+                        if (begHour != "" || begMinute != "" || endHour != "" || endMinute != "") {
+                            if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
+                                firstError = true
                             }
                             else {
-                                newStopTime = Timestamp(Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DATE),endHour.toInt(),endMinute.toInt(),Calendar.getInstance().get(Calendar.SECOND),0)
+                                firstError = false
+                            }
+                            if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || endMinute.toInt() < 0) {
+                                secondError = true
+                            }
+                            else {
+                                secondError = false
+                            }
+                            if (!firstError && !secondError) {
+                                if (begHour.length < 1) {
+                                    begHour = "0$begHour"
+                                }
+                                if (begMinute.length < 1) {
+                                    begHour = "0$begHour"
+                                }
+                                if (endHour.length < 1) {
+                                    begHour = "0$begHour"
+                                }
+                                if (endMinute.length < 1) {
+                                    begHour = "0$begHour"
+                                }
+                                newStartTime = "$begHour:$begMinute"
+                                newStopTime = "$endHour:$endMinute"
                             }
                         }
+
                     }) {
                         Text("Submit Timestamps")
                     }
