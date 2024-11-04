@@ -31,6 +31,7 @@ import javax.inject.Inject
 
 //bluetooth viewmodel, similar dependency handling as setup viewmodel
 class BluetoothViewModel (application: Application): AndroidViewModel(application) {
+    private val sensorViewModel = SensorViewModel(application)
 
     private val clientDisconnect: (address: String) -> Unit = { address ->
         _state.update { currentState ->
@@ -52,7 +53,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
     }
 
     //controller needed for the view model, it's a singleton
-    private val bluetoothController: BluetoothController = AndroidBluetoothController(application, clientDisconnect)
+    private val bluetoothController: BluetoothController = AndroidBluetoothController(application, sensorViewModel ,clientDisconnect)
 
     //state that holds the bluetooth devices, paired devices, etc.
     private val _state = MutableStateFlow(BluetoothUiState())

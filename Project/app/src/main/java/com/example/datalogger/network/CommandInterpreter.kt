@@ -1,10 +1,13 @@
 package com.example.datalogger.network
 
 
-import com.example.datalogger.state.BluetoothViewModel
+import com.example.datalogger.state.SensorViewModel
+import kotlinx.coroutines.runBlocking
 
-class CommandInterpreter() {
-
+class CommandInterpreter(
+    private val sensorViewModel: SensorViewModel
+) {
+    private var samples: Int = 0
 
     fun interpret(command: String): String {
         val commandType = command.take(2)
@@ -35,7 +38,7 @@ class CommandInterpreter() {
     }
 
     private fun setNumberOfSamples(params: String): String {
-        val samples = params.toIntOrNull() ?: return "Error: Invalid sample number"
+        samples = params.toIntOrNull() ?: return "Error: Invalid sample number"
         return "SAMPLES=$samples\nOK"
     }
 
@@ -45,11 +48,14 @@ class CommandInterpreter() {
     }
 
     private fun sampleAndTransferData(): String {
-        //start sampling here
-        
-        //return sampling here
-
-        return "SAMPLING"
+        return runBlocking {
+            if (sensorViewModel.isAnyChannelMonitoring()) {
+                sensorViewModel.startSampling(samples)
+                "SAMPLING\n" + sensorViewModel.getAndClearSampledData()
+            } else {
+                "sampling failed, please start monitoring sensor first."
+            }
+        }
     }
 
     private fun sendSampledData(): String {

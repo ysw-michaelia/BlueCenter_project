@@ -9,14 +9,35 @@ import androidx.lifecycle.viewModelScope
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
 import com.example.datalogger.sensor.SensorController
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 //Future view model that will be used to store the state of the sensors
-@RequiresApi(Build.VERSION_CODES.O_MR1)
 class SensorViewModel(application: Application) : AndroidViewModel(application) {
     private val sensorController = SensorController(application)
     private val channelRepository: ChannelRepository = DatabaseModule.repository
+    private val sensorDataList = mutableListOf<String>()  //save sampling data
+    private var sampleCount: Int = 0
+    var isSamplingRequested = false
+
+    suspend fun isAnyChannelMonitoring(): Boolean {
+        val channels = channelRepository.allChannels().first()
+        return channels.any { it.isActivated }
+    }
+
+    fun startSampling(samples: Int) {
+        sampleCount = samples
+        isSamplingRequested = true
+    }
+
+    fun getAndClearSampledData(): String {
+        val data = sensorDataList.joinToString("\n")
+        sensorDataList.clear()
+        isSamplingRequested = false
+        sampleCount = 0
+        return data
+    }
 
     //toggle monitoring for a given channel by ID
     fun toggleMonitoring(channelId: Int, isMonitoring: Boolean) {
@@ -39,6 +60,10 @@ class SensorViewModel(application: Application) : AndroidViewModel(application) 
                         sensorController.startSensor(sensor) { data ->
                             //handle the sensor data here
                             Log.d("SensorData", data.joinToString(", "))
+
+                            if (isSamplingRequested && sensorDataList.size < sampleCount) {
+                                sensorDataList.add(data.joinToString(", "))
+                            }
                         }
                     } else {
                         Log.e("SensorError", "can't find sensor with type ${it.sensorType}")

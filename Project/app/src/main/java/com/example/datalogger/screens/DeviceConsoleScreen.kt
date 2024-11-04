@@ -76,6 +76,7 @@ fun DeviceConsoleScreen(
         Button(
             onClick = {
                 onSendCommand(command) // Process the command
+                command = ""
             },
             enabled = !(state.isTalking[device.address] ?: false),
             modifier = Modifier.padding(top = 16.dp)

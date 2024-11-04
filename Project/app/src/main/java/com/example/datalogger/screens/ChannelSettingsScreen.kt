@@ -60,6 +60,7 @@ fun ChannelSettingsScreen(
             var editedSensorType by remember { mutableStateOf(channel.sensorType) }
             var editedSensorName by remember { mutableStateOf(channel.sensorName) }
             var dummySensorOutput by remember { mutableStateOf("0") }
+            var channelIsActive by remember { mutableStateOf(channel.isActivated) }
             var static by remember { mutableStateOf("False") }
             Row() {
                 Text(
@@ -73,7 +74,8 @@ fun ChannelSettingsScreen(
                             channelId = channelId,
                             name = editedChannelName,
                             sensorName = editedSensorName,
-                            sensorType = editedSensorType))
+                            sensorType = editedSensorType,
+                            isActivated = channelIsActive))
                         navController.navigate("slave_home")
                     }
                 ) {

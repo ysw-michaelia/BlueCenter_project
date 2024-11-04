@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.util.Log
+import com.example.datalogger.state.SensorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -35,6 +36,7 @@ import java.util.UUID
 @SuppressLint ("MissingPermission")
 class AndroidBluetoothController(
     private val context: Context,
+    private val sensorViewModel: SensorViewModel,
     private val clientDisconnectCallback: (address: String) -> Unit
 ): BluetoothController {
 
@@ -47,7 +49,7 @@ class AndroidBluetoothController(
         bluetoothManager?.adapter
     }
 
-    private val commandInterpeter = CommandInterpreter()
+    private val commandInterpeter = CommandInterpreter(sensorViewModel)
 
     //it checks if the device is connected
     private val _isConnected = MutableStateFlow(false)

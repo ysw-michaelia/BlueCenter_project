@@ -31,7 +31,4 @@ interface ChannelDao {
     //delete all the channels in the database
     @Query("DELETE FROM channels")
     suspend fun deleteAllChannels()
-
-
-
 }
