@@ -30,7 +30,6 @@ fun BluetoothDevicesScreen(
     state: BluetoothUiState,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
-    disconnectFromDevice: () -> Unit,
     onDeviceClick: (BluetoothDevice) -> Unit,
 
 ) {
@@ -39,7 +38,6 @@ fun BluetoothDevicesScreen(
     ) {
         BluetoothDeviceList(
             pairedDevices = state.pairedDevices,
-            scannedDevices = state.scannedDevices,
             onClick = onDeviceClick,
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,17 +51,10 @@ fun BluetoothDevicesScreen(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Button(onClick = onStartScan) {
-                Text(text = "Start scan")
+                Text(text = "Update Paired Devices")
             }
             Button(onClick = onStopScan) {
-                Text(text = "Stop scan")
-            }
-            val isEnabled by remember { mutableStateOf(state.isConnected) }
-            Button(
-                onClick = disconnectFromDevice,
-                enabled = isEnabled
-            ) {
-                Text(text = "Disconnect")
+                Text(text = "Stop")
             }
         }
     }
@@ -73,7 +64,6 @@ fun BluetoothDevicesScreen(
 @Composable
 fun BluetoothDeviceList(
     pairedDevices: List<BluetoothDevice>,
-    scannedDevices: List<BluetoothDevice>,
     onClick: (BluetoothDevice) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -90,23 +80,6 @@ fun BluetoothDeviceList(
             )
         }
         items(pairedDevices) { device->
-            Text(
-                text = device.name ?: "(No name)",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onClick(device) }
-                    .padding(16.dp)
-            )
-        }
-        item {
-            Text(
-                text = "Scanned Devices",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-        items(scannedDevices) { device->
             Text(
                 text = device.name ?: "(No name)",
                 modifier = Modifier

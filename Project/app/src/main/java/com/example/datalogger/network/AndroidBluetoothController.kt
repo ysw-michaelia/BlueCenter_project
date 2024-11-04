@@ -11,9 +11,6 @@ import android.bluetooth.BluetoothSocket
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.util.Log
-import com.example.datalogger.data.PreferencesManager
-import com.example.datalogger.data.console.BluetoothCommand
-import com.example.datalogger.data.console.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -26,8 +23,6 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +34,8 @@ import java.util.UUID
 //it takes care of any interactions of bluetooth (scanning, pairing, connecting, etc.)
 @SuppressLint ("MissingPermission")
 class AndroidBluetoothController(
-    private val context: Context
+    private val context: Context,
+    private val clientDisconnectCallback: (address: String) -> Unit
 ): BluetoothController {
 
     //manager and adapter for bluetooth
@@ -51,6 +47,8 @@ class AndroidBluetoothController(
         bluetoothManager?.adapter
     }
 
+    private val commandInterpeter = CommandInterpreter()
+
     //it checks if the device is connected
     private val _isConnected = MutableStateFlow(false)
     override val isConnected: StateFlow<Boolean>
@@ -61,6 +59,8 @@ class AndroidBluetoothController(
     override val scanDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _scannedDevices.asStateFlow()
 
+    private val activeConnections = mutableMapOf<String, BluetoothSocket>()
+
     //it saves all paired devices (used only on slave)
     private val _pairedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
     override val pairedDevices: StateFlow<List<BluetoothDeviceDomain>>
@@ -70,6 +70,20 @@ class AndroidBluetoothController(
     private val _connectedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
     override val connectedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _connectedDevices.asStateFlow()
+
+    private val onClientDisconnect: (socket: BluetoothSocket) -> Unit = { socket->
+        connectedClients.remove(socket)
+        _connectedDevices.update { currentDevices ->
+            currentDevices.filterNot { it.address == socket.remoteDevice.address }
+        }
+        activeConnections.remove(socket.remoteDevice.address)
+        clientDisconnectCallback(socket.remoteDevice.address)
+        try {
+            socket.close()
+        } catch (e: IOException) {
+            Log.e("BluetoothService", "Error closing socket: ${e.message}")
+        }
+    }
 
     private val dataTransferServices = mutableMapOf<String, BluetoothDataTransferService>()
 
@@ -166,14 +180,15 @@ class AndroidBluetoothController(
             try {
                 // Accept client connection
                 val clientSocket = currentServerSocket?.accept() ?: continue
-                send(ConnectionResult.ConnectionEstablished)
+                send(ConnectionResult.ConnectionEstablished(clientSocket.remoteDevice.address))
                 connectedClients.add(clientSocket)
                 _connectedDevices.update { it + clientSocket.remoteDevice.toBluetoothDeviceDomain() }
+                activeConnections[clientSocket.remoteDevice.address] = clientSocket
 
                 // Process each client connection
                 launch {
                     val device = clientSocket.remoteDevice
-                    val service = BluetoothDataTransferService(clientSocket)
+                    val service = BluetoothDataTransferService(clientSocket, commandInterpeter, onClientDisconnect)
                     dataTransferServices[device.address] = service
 
                     // Handle incoming data from client
@@ -226,11 +241,11 @@ class AndroidBluetoothController(
                         }
                     }
 
-                    val service = BluetoothDataTransferService(socket)
+                    val service = BluetoothDataTransferService(socket, commandInterpeter, onClientDisconnect)
                     dataTransferServices[device.address] = service
 
                     // Use withTimeout to avoid hanging indefinitely
-                    emit(ConnectionResult.ConnectionEstablished)
+                    emit(ConnectionResult.ConnectionEstablished(device.address))
 
                     emitAll(
                         service
@@ -256,7 +271,7 @@ class AndroidBluetoothController(
 
     }
 
-    override suspend fun trySendCommand(command: String, deviceAddress: String): BluetoothCommand? {
+    override suspend fun trySendCommand(command: String, deviceAddress: String): String? {
         if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
             !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
         ) {
@@ -264,11 +279,10 @@ class AndroidBluetoothController(
         }
 
         val service = dataTransferServices[deviceAddress]
+
         if(service == null) {
             return null
         }
-
-        val command = BluetoothCommand(command)
 
         service.sendString(command.toByteArray())
 
@@ -308,12 +322,6 @@ class AndroidBluetoothController(
         return message
     }
 
-    fun getSocketForDevice(deviceDomain: BluetoothDeviceDomain): BluetoothSocket? {
-        return connectedClients.find { socket ->
-            socket.remoteDevice.address == deviceDomain.address
-        }
-    }
-
     override fun getDeviceByAddress(address: String): BluetoothDevice? {
         return bluetoothAdapter?.getRemoteDevice(address)
     }
@@ -329,11 +337,8 @@ class AndroidBluetoothController(
         currentServerSocket = null
     }
 
-    private fun onClientDisconnect(socket: BluetoothSocket) {
-        connectedClients.remove(socket)
-        _connectedDevices.update { currentDevices ->
-            currentDevices.filterNot { it.address == socket.remoteDevice.address }
-        }
+    fun getSocketForDevice(deviceAddress: String): BluetoothSocket? {
+        return activeConnections[deviceAddress]
     }
 
     override fun release() {

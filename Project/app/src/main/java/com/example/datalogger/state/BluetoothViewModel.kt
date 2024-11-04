@@ -1,6 +1,7 @@
 package com.example.datalogger.state
 
 import android.app.Application
+import android.bluetooth.BluetoothSocket
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -25,14 +26,35 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 import javax.inject.Inject
 
 //bluetooth viewmodel, similar dependency handling as setup viewmodel
 class BluetoothViewModel (application: Application): AndroidViewModel(application) {
-    //controller needed for the view model, it's a singleton
-    private val bluetoothController: BluetoothController = AndroidBluetoothController(application)
 
-    //state that holds the bluetooth devices, both paired and scanned
+    private val clientDisconnect: (address: String) -> Unit = { address ->
+        _state.update { currentState ->
+            // Create new maps to hold the updated state
+            val updatedInteractionLog = currentState.interactionLog.toMutableMap().apply {
+                remove(address)  // Remove all messages for the disconnected address
+            }
+
+            val updatedIsTalking = currentState.isTalking.toMutableMap().apply {
+                this[address] = false  // Set isTalking to false for the disconnected address
+            }
+
+            // Return the updated state with modified interactionLog and isTalking
+            currentState.copy(
+                interactionLog = updatedInteractionLog,
+                isTalking = updatedIsTalking
+            )
+        }
+    }
+
+    //controller needed for the view model, it's a singleton
+    private val bluetoothController: BluetoothController = AndroidBluetoothController(application, clientDisconnect)
+
+    //state that holds the bluetooth devices, paired devices, etc.
     private val _state = MutableStateFlow(BluetoothUiState())
     val state = combine (
         bluetoothController.scanDevices,
@@ -45,8 +67,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
             scannedDevices = scanDevices,
             pairedDevices = pairedDevices,
             connectedDevices = connectedDevices,
-            messages = if(state.isServerOpen) state.messages else emptyMap(),
-            receivedCommands = if(state.isConnected) state.receivedCommands else emptyList()
+            interactionLog = if(state.isServerOpen) state.interactionLog else emptyMap()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
@@ -106,9 +127,26 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
     fun sendCommand(command: String, deviceAddress: String) {
         viewModelScope.launch {
             val bluetoothCommand = bluetoothController.trySendCommand(command, deviceAddress)
-//            if (bluetoothCommand != null) {
-//                _state.update { it.copy(sentCommands = it.sentCommands + bluetoothCommand) }
-//            }
+            if (bluetoothCommand != null) {
+                _state.update { currentState->
+                    val currentMessages = currentState.interactionLog[deviceAddress] ?: emptyList()
+
+                    // Add the new message to the list for that device
+                    val updatedCommands = currentMessages + "You: $bluetoothCommand"
+
+                    val updatedCommandsMap = currentState.interactionLog.toMutableMap().apply {
+                        this[deviceAddress] = updatedCommands
+                    }
+                    val updatedIsTalking = currentState.isTalking.toMutableMap().apply {
+                        this[deviceAddress] = false  // Set isTalking to false for the disconnected address
+                    }
+                    currentState.copy(
+                        interactionLog = updatedCommandsMap,
+                        isTalking = updatedIsTalking
+                    )
+                }
+
+            }
         }
     }
 
@@ -136,18 +174,23 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
     private fun Flow<ConnectionResult>.listen(): Job {
 
-        Log.d("we're out", "onEach dentro")
+        Log.d("listen", "start")
         return onEach { result ->
-            Log.d("we're in", "onEach dentro")
+            Log.d("listen", "received")
 
             when (result) {
 
-                ConnectionResult.ConnectionEstablished -> {
-                    _state.update {
-                        it.copy(
+                is ConnectionResult.ConnectionEstablished -> {
+
+                    _state.update { currentState ->
+                        val updatedIsTalking = currentState.isTalking.toMutableMap().apply {
+                            put(result.deviceAddress, false)  // Initialize the new device's status to false
+                        }
+                        currentState.copy(
                             isConnected = true,
                             isConnecting = false,
-                            errorMessage = null
+                            errorMessage = null,
+                            isTalking = updatedIsTalking
                         )
                     }
                 }
@@ -163,18 +206,24 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                 }
 
                 is ConnectionResult.StringReceived -> {
+                    val slaveName = bluetoothController.connectedDevices.value.find { it.address == result.deviceAddress }?.name ?: "Slave"
                     _state.update { currentState->
-                        val currentMessages = currentState.messages[result.deviceAddress] ?: emptyList()
+                        val currentMessages = currentState.interactionLog[result.deviceAddress] ?: emptyList()
+                        val message = result.message
 
                         // Add the new message to the list for that device
-                        val updatedMessages = currentMessages + result.message
+                        val updatedMessages = currentMessages + "$slaveName: $message"
 
-                        val updatedMessagesMap = currentState.messages.toMutableMap().apply {
+                        val updatedMessagesMap = currentState.interactionLog.toMutableMap().apply {
                             this[result.deviceAddress] = updatedMessages
+                        }
+                        val updatedIsTalking = currentState.isTalking.toMutableMap().apply {
+                            this[result.deviceAddress] = false  // Set isTalking to false for the disconnected address
                         }
 
                         currentState.copy(
-                            messages = updatedMessagesMap,
+                            interactionLog = updatedMessagesMap,
+                            isTalking = updatedIsTalking
                         )
                     }
                 }

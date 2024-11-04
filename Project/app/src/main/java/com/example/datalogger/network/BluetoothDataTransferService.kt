@@ -10,7 +10,9 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 class BluetoothDataTransferService(
-    private val socket: BluetoothSocket
+    private val socket: BluetoothSocket,
+    private val commandInterpreter: CommandInterpreter,
+    private val disconnectionCallback: (socket: BluetoothSocket) -> Unit
 ) {
     fun listenForIncomingString(): Flow<String> {
         return flow {
@@ -23,6 +25,7 @@ class BluetoothDataTransferService(
                 val byteCount = try {
                     socket.inputStream.read(buffer)
                 } catch (e: IOException) {
+                    disconnectionCallback(socket)
                     emit("Error reading input: ${e.message}")
                 }
                 if (byteCount == -1) {
@@ -53,20 +56,19 @@ class BluetoothDataTransferService(
                     break // Exit the loop if disconnected
                 }
                 val receivedCommand = buffer.copyOfRange(0, byteCount as Int).decodeToString()
+                Log.d("ricevuto", "Ricevuto: ${buffer.copyOfRange(0, byteCount as Int).decodeToString()}")
+
 
                 emit(receivedCommand)
 
-                // Automatically reply based on the command received
                 handleCommand(receivedCommand)
+
             }
         }.flowOn(Dispatchers.IO)
     }
 
     private suspend fun handleCommand(command: String) {
-        val response = when (command) {
-            "ciao" -> "Potato"
-            else -> "Unknown command"
-        }
+        val response = commandInterpreter.interpret(command)
 
         // Send the response back to the master
         sendString(response.toByteArray())
@@ -76,10 +78,11 @@ class BluetoothDataTransferService(
         return withContext(Dispatchers.IO) {
             try {
                 socket.outputStream.write(bytes)
-                            } catch (e: IOException) {
+            } catch (e: IOException) {
                 e.printStackTrace()
                 return@withContext false
             }
+            Log.d("sent", "Inviato: ${bytes.decodeToString()}")
             true
         }
     }
@@ -92,6 +95,7 @@ class BluetoothDataTransferService(
             val byteCount = try {
                 socket.inputStream.read(buffer)
             } catch (e: IOException) {
+                disconnectionCallback(socket)
                 throw IOException("Error reading file: ${e.message}")
             }
             emit(buffer.copyOfRange(0, byteCount)) // Emit only the bytes read
