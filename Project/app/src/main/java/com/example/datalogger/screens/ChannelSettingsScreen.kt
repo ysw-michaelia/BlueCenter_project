@@ -241,13 +241,13 @@ fun ChannelSettingsScreen(
                             }
                         }
                         else {
-                            if (begHour != "" || begHour != null || begMinute != "" || begMinute != null || begHour.all { c: Char -> c.isDigit() } || begMinute.all { c: Char -> c.isDigit()}) {
+                            if (begHour == "" || begMinute == "" || !begHour.all { c: Char -> c.isDigit() } || !begMinute.all { c: Char -> c.isDigit()}) {
                                 firstError = true
                             }
                             else {
                                 firstError = false
                             }
-                            if (endHour != "" || endHour != null || endMinute != "" || endMinute != null || endHour.all { c: Char -> c.isDigit() } || endMinute.all { c: Char -> c.isDigit() }) {
+                            if (endHour == "" ||  endMinute == "" || !endHour.all { c: Char -> c.isDigit() } || !endMinute.all { c: Char -> c.isDigit() }) {
                                 secondError = true
                             }
                             else {

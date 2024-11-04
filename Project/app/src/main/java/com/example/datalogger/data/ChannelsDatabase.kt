@@ -25,7 +25,7 @@ abstract class ChannelsDatabase : RoomDatabase() {
         // Migration from version 2 to 3
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE Channel ADD COLUMN staticValue FLOAT DEFAULT 0 NOT NULL; ADD COLUMN startTime STRING DEFAULT NULL; ADD COLUMN stopTime STRING DEFAULT NULL;")
+                database.execSQL("ALTER TABLE Channel ADD COLUMN staticValue FLOAT DEFAULT 0 NOT NULL; ADD COLUMN startTime STRING DEFAULT \"00:00\" NOT NULL; ADD COLUMN stopTime STRING DEFAULT \"00:00\" NOT NULL;")
             }
         }
 
