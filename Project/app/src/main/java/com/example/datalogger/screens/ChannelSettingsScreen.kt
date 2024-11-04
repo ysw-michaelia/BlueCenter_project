@@ -80,6 +80,7 @@ fun ChannelSettingsScreen(
             var endMinute by remember { mutableStateOf("") }
             var firstError by remember { mutableStateOf(false) }
             var secondError by remember { mutableStateOf(false) }
+            var newSubmission by remember { mutableStateOf(false) }
             Row() {
                 Text(
                     text = "${channel.name} settings: ",
@@ -212,47 +213,51 @@ fun ChannelSettingsScreen(
                     Button(onClick = {
                         if (begHour != "" &&  begMinute != "" && endHour != "" &&  endMinute != "" && begHour.all { c: Char -> c.isDigit() } && begMinute.all { c: Char -> c.isDigit()} && endHour.all { c: Char -> c.isDigit() } && endMinute.all { c: Char -> c.isDigit() }) {
                             if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
+                                newSubmission = false
                                 firstError = true
                             }
                             else {
                                 firstError = false
                             }
                             if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || endMinute.toInt() < 0) {
+                                newSubmission = false
                                 secondError = true
                             }
                             else {
                                 secondError = false
                             }
                             if (!firstError && !secondError) {
-                                if (begHour.length < 1) {
+                                if (begHour.length < 2) {
                                     begHour = "0$begHour"
                                 }
-                                if (begMinute.length < 1) {
-                                    begHour = "0$begHour"
+                                if (begMinute.length < 2) {
+                                    begMinute = "0$begMinute"
                                 }
-                                if (endHour.length < 1) {
-                                    begHour = "0$begHour"
+                                if (endHour.length < 2) {
+                                    endHour = "0$endHour"
                                 }
-                                if (endMinute.length < 1) {
-                                    begHour = "0$begHour"
+                                if (endMinute.length < 2) {
+                                    endMinute = "0$endMinute"
                                 }
                                 newStartTime = "$begHour:$begMinute"
                                 newStopTime = "$endHour:$endMinute"
+                                newSubmission = true
                             }
                         }
                         else {
-                            if (begHour == "" || begMinute == "" || !begHour.all { c: Char -> c.isDigit() } || !begMinute.all { c: Char -> c.isDigit()}) {
-                                firstError = true
-                            }
-                            else {
-                                firstError = false
-                            }
-                            if (endHour == "" ||  endMinute == "" || !endHour.all { c: Char -> c.isDigit() } || !endMinute.all { c: Char -> c.isDigit() }) {
-                                secondError = true
-                            }
-                            else {
-                                secondError = false
-                            }
+                            newSubmission = false
+                            firstError =
+                                if (begHour == "" || begMinute == "" || !begHour.all { c: Char -> c.isDigit() } || !begMinute.all { c: Char -> c.isDigit()}) {
+                                    true
+                                } else {
+                                    false
+                                }
+                            secondError =
+                                if (endHour == "" ||  endMinute == "" || !endHour.all { c: Char -> c.isDigit() } || !endMinute.all { c: Char -> c.isDigit() }) {
+                                    true
+                                } else {
+                                    false
+                                }
                         }
 
                     }) {
@@ -269,7 +274,14 @@ fun ChannelSettingsScreen(
                         Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
                     }
                 }
-
+                if (newSubmission) {
+                    Row {
+                        Text("New Start time: $newStartTime")
+                    }
+                    Row {
+                        Text("New Stop time: $newStopTime")
+                    }
+                }
             }
         }
     }
