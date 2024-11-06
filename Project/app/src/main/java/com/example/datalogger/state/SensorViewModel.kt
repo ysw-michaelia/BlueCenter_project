@@ -7,8 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
 import com.example.datalogger.sensor.SensorController
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 //Future view model that will be used to store the state of the sensors
@@ -16,7 +19,10 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
     private val sensorController = SensorController(application)
     private val channelRepository: ChannelRepository = DatabaseModule.repository
     private val sensorDataList = mutableListOf<String>()  //save sampling data
-    private var sampleCount: Int = 0
+    private val _samples = MutableStateFlow<Int>(0)
+    val samples: StateFlow<Int>
+        get() = _samples
+
     var isSamplingRequested = false
 
     suspend fun isAnyChannelMonitoring(): Boolean {
@@ -24,8 +30,12 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         return channels.any { it.isActivated }
     }
 
-    fun startSampling(samples: Int) {
-        sampleCount = samples
+    fun setSamples(samples: Int) {
+      _samples.update {
+          samples
+      }
+    }
+    fun startSampling() {
         isSamplingRequested = true
     }
 
@@ -33,7 +43,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         val sampledData = sensorDataList
         sensorDataList.clear()
         isSamplingRequested = false
-        sampleCount = 0
+        _samples.update { 0 }
         return sampledData
     }
 
@@ -59,7 +69,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
                             //handle the sensor data here
                             Log.d("SensorData", data.joinToString(", "))
 
-                            if (isSamplingRequested && sensorDataList.size < sampleCount) {
+                            if (isSamplingRequested && sensorDataList.size < samples.value) {
                                 sensorDataList.add(data.joinToString(", "))
                             }
                         }

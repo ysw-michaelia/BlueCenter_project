@@ -1,13 +1,18 @@
 package com.example.datalogger.network
 
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.example.datalogger.di.DatabaseModule.repository
 import com.example.datalogger.state.BluetoothViewModel
 import com.example.datalogger.state.SensorViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class CommandInterpreter(
     private val sensorViewModel: SensorViewModel
@@ -18,19 +23,19 @@ class CommandInterpreter(
         val parameters = command.drop(3)
 
         return when (commandType) {
-            "[a" -> setSamplingRate(parameters)
+            //"[a" -> setSamplingRate(parameters)
             "[b" -> setNumberOfSamples(parameters)
-            "[c" -> setSamplingConfiguration(parameters)
+            //"[c" -> setSamplingConfiguration(parameters)
             // "[d" -> sampleAndTransferData()
             "[e" -> sendSampledData()
-            "[f" -> setClock(parameters)
+            //"[f" -> setClock(parameters)
             "[g" -> showDeviceStatus()
-            "[h" -> setWaitTime(parameters)
+            //"[h" -> setWaitTime(parameters)
             "[i" -> displayTime()
             "[o" -> setActiveChannels(parameters)
-            "[p" -> showMode()
-            "[q" -> setStreamingRate(parameters)
-            "[s" -> stopSampling()
+            //"[p" -> showMode()
+            //"[q" -> setStreamingRate(parameters)
+            //"[s" -> stopSampling()
             "[v" -> showVersion()
             else -> mutableListOf("Error: Unsupported Command")
         }
@@ -43,6 +48,7 @@ class CommandInterpreter(
 
     private fun setNumberOfSamples(params: String): MutableList<String> {
         val samples = params.toIntOrNull() ?: return mutableListOf("Error: Invalid sample number")
+        sensorViewModel.setSamples(samples)
         return mutableListOf("SAMPLES=$samples\nOK")
     }
 
@@ -87,8 +93,20 @@ class CommandInterpreter(
     }
 
     private fun showDeviceStatus(): MutableList<String> {
-        //return "Frequency: ${status.frequency}\nSamples: ${status.samples}\nNr of active channels: ${status.activeChannels}\nStatus: ${status.status}\nOK"
-        return mutableListOf("status")
+        val responseMessages = mutableListOf<String>()
+        val samples = sensorViewModel.samples.value
+        Log.d("CommandInterpreter", "Samples: $samples")
+        responseMessages.add("Samples: ${samples}\n")
+        runBlocking(Dispatchers.IO) {
+            val channels = repository.getActiveChannels().first()
+            val channelCount = channels.size
+            responseMessages.add("Number of active channels: $channelCount\n")
+            Log.d("CommandInterpreter", "Number of active channels: $channelCount")
+        }
+
+        responseMessages.add("OK")
+        Log.d("CommandInterpreter", "response: ${responseMessages.joinToString()}")
+        return responseMessages
     }
 
     private fun setWaitTime(params: String): MutableList<String> {
@@ -97,9 +115,11 @@ class CommandInterpreter(
         return mutableListOf("second")
     }
 
+    @SuppressLint("NewApi")
     private fun displayTime(): MutableList<String> {
-        //return "Clock set: ${currentTime.time}, Date:${currentTime.date}\nOK"
-        return mutableListOf("TIME")
+        val currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        return mutableListOf("Current DateTime: $currentDateTime")
+
     }
 
     private fun setActiveChannels(params: String): MutableList<String> {

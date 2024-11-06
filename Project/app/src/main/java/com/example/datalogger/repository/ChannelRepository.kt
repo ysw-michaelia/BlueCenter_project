@@ -14,6 +14,8 @@ class ChannelRepository(
 
     fun getChannelById(channelId: Int) = dao.getChannelById(channelId)
 
+    fun getActiveChannels() = dao.getActiveChannels()
+
     suspend fun upsertChannel(channel: Channel) = dao.upsertChannel(channel)
 
     suspend fun deleteAllChannels() = dao.deleteAllChannels()

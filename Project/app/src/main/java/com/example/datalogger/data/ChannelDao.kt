@@ -28,6 +28,9 @@ interface ChannelDao {
     @Query("SELECT * FROM channels")
     fun getAllChannels(): Flow<List<Channel>>
 
+    @Query("SELECT * FROM channels WHERE is_activated = true")
+    fun getActiveChannels(): Flow<List<Channel>>
+
     //delete all the channels in the database
     @Query("DELETE FROM channels")
     suspend fun deleteAllChannels()
