@@ -1,16 +1,17 @@
 package com.example.datalogger.network
 
 
+import android.util.Log
+import com.example.datalogger.di.DatabaseModule.repository
 import com.example.datalogger.state.BluetoothViewModel
-
-class CommandInterpreter(
-
-) {
+import com.example.datalogger.state.SensorViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 
 class CommandInterpreter(
     private val sensorViewModel: SensorViewModel
 ) {
-    private var samples: Int = 0
 
     fun interpret(command: String): MutableList<String> {
         val commandType = command.take(2)
@@ -20,7 +21,7 @@ class CommandInterpreter(
             "[a" -> setSamplingRate(parameters)
             "[b" -> setNumberOfSamples(parameters)
             "[c" -> setSamplingConfiguration(parameters)
-            "[d" -> sampleAndTransferData()
+            // "[d" -> sampleAndTransferData()
             "[e" -> sendSampledData()
             "[f" -> setClock(parameters)
             "[g" -> showDeviceStatus()
@@ -50,19 +51,19 @@ class CommandInterpreter(
         return mutableListOf("OK")
     }
 
-    private fun sampleAndTransferData(): MutableList<String> {
-        return runBlocking {
-            if (sensorViewModel.isAnyChannelMonitoring()) {
-                sensorViewModel.startSampling(samples)
-
-                val sampledData = sensorViewModel.getAndClearSampledData()
-                sampledData.add("END")
-                return sampledData
-            } else {
-              return mutableListOf("sampling failed, please start monitoring sensor first.")
-            }
-        }
-    }
+//    private fun sampleAndTransferData(): MutableList<String> {
+//        return runBlocking {
+//            if (sensorViewModel.isAnyChannelMonitoring()) {
+//                sensorViewModel.startSampling(samples)
+//
+//                val sampledData = sensorViewModel.getAndClearSampledData()
+//                sampledData.add("END")
+//                return sampledData
+//            } else {
+//              return mutableListOf("sampling failed, please start monitoring sensor first.")
+//            }
+//        }
+//    }
 
     private fun sendSampledData(): MutableList<String> {
         //return "DATA:\n$data\nEND"
@@ -73,11 +74,14 @@ class CommandInterpreter(
         val parts = params.split("-")
 
         val year = parts.getOrNull(0)?.toIntOrNull() ?: return mutableListOf("Error: Invalid year")
-        val month = parts.getOrNull(1)?.toIntOrNull() ?: return mutableListOf("Error: Invalid month")
+        val month =
+            parts.getOrNull(1)?.toIntOrNull() ?: return mutableListOf("Error: Invalid month")
         val day = parts.getOrNull(2)?.toIntOrNull() ?: return mutableListOf("Error: Invalid day")
         val hour = parts.getOrNull(3)?.toIntOrNull() ?: return mutableListOf("Error: Invalid hour")
-        val minute = parts.getOrNull(4)?.toIntOrNull() ?: return mutableListOf("Error: Invalid minute")
-        val second = parts.getOrNull(5)?.toIntOrNull() ?: return mutableListOf("Error: Invalid second")
+        val minute =
+            parts.getOrNull(4)?.toIntOrNull() ?: return mutableListOf("Error: Invalid minute")
+        val second =
+            parts.getOrNull(5)?.toIntOrNull() ?: return mutableListOf("Error: Invalid second")
 
         return mutableListOf("Clock set: $hour:$minute:$second, Date:$day/$month, Year:$year\nStatus:Ready.\nOK")
     }
@@ -99,8 +103,39 @@ class CommandInterpreter(
     }
 
     private fun setActiveChannels(params: String): MutableList<String> {
-        val channels = params.split(":").map { it.toInt() }
-        return mutableListOf("Active channels set\nOK")
+        val responseMessages = mutableListOf<String>()
+        val channelIds = params.split(":").mapNotNull { it.toIntOrNull() }
+        Log.d("CommandInterpreter", "Parsed channel IDs: $channelIds")
+
+        // Using runBlocking to make the function wait for coroutine completion before returning
+        runBlocking(Dispatchers.IO) {
+            channelIds.forEach { channelId ->
+                try {
+                    val channel = repository.getChannelById(channelId).firstOrNull()
+
+                    if (channel != null) {
+                        channel.isActivated = true
+                        repository.upsertChannel(channel) // Update channel status
+                        Log.d("CommandInterpreter", "Channel $channelId activated.\nOK")
+                        responseMessages.add("Channel $channelId activated.\nOK")
+                    } else {
+                        Log.d("CommandInterpreter", "Error: Channel $channelId not found.")
+                        responseMessages.add("Error: Channel $channelId not found.")
+                    }
+                } catch (e: Exception) {
+                    Log.e("CommandInterpreter", "Exception for channel $channelId: ${e.message}")
+                    responseMessages.add("Error: Unable to update channel $channelId. Exception: ${e.message}")
+                }
+            }
+        }
+
+        // If no channels were activated, add a message
+        if (responseMessages.isEmpty()) {
+            responseMessages.add("No channels were activated.")
+        }
+
+        Log.d("CommandInterpreter", "response: ${responseMessages.joinToString()}")
+        return responseMessages
     }
 
     private fun showMode(): MutableList<String> {
@@ -114,7 +149,7 @@ class CommandInterpreter(
         return mutableListOf("rate")
     }
 
-    private fun stopSampling(): MutableList<String>{
+    private fun stopSampling(): MutableList<String> {
 
         return mutableListOf("Sampling stopped\nOK")
     }
