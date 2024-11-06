@@ -21,7 +21,7 @@ data class Channel(
     @ColumnInfo(name = "static_value")
     var staticValue: Float = 0F, //static value, if needs to be referenced
     @ColumnInfo(name = "start_time")
-    var startTime: String = "00:00:00", //start time
+    var startTime: String = "00:00", //start time
     @ColumnInfo(name = "stop_time")
-    var stopTime: String = "00:00:00", //stop time
+    var stopTime: String = "00:00", //stop time
     )
