@@ -5,10 +5,12 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 
-class SensorController(private val context: Context) {
+class SensorController(private val context: Context, private val sensorConfig: SensorConfig) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val activeSensorListeners = mutableMapOf<Int, Pair<SensorEventListener, Int>>()
+    private var sampleCounter: Int = 0
 
     fun getSensorByType(sensorType: Int): Sensor? {
         return sensorManager.getDefaultSensor(sensorType)
@@ -18,6 +20,9 @@ class SensorController(private val context: Context) {
     fun startSensor(sensor: Sensor, onDataReceived: (FloatArray) -> Unit) {
         val sensorType = sensor.type
         val (listener, count) = activeSensorListeners[sensorType] ?: createSensorListener(sensor, onDataReceived)
+
+        //reset counter
+        sampleCounter = 0
 
         //if new, register listener
         if (count == 0) {
@@ -36,6 +41,7 @@ class SensorController(private val context: Context) {
             //last listener, unregister
             sensorManager.unregisterListener(listener)
             activeSensorListeners.remove(sensorType)
+            Log.d("SensorController", "Sensor type $sensorType stopped and listener removed.")
         } else {
             //update count
             activeSensorListeners[sensorType] = listener to (count - 1)
@@ -46,8 +52,17 @@ class SensorController(private val context: Context) {
     private fun createSensorListener(sensor: Sensor, onDataReceived: (FloatArray) -> Unit): Pair<SensorEventListener, Int> {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                // callback
-                onDataReceived(event.values)
+                // Check sample count limit before processing
+                if (sampleCounter < sensorConfig.getSampleCount()) {
+                    onDataReceived(event.values)
+                    sampleCounter++
+                    Log.d("SensorController", "Sample #$sampleCounter received: ${event.values.joinToString()}")
+                } else {
+                    // Stop sensor once the sample count is reached
+                    stopSensor(sensor.type)
+                    Log.d("SensorController", "Target sample count reached, stopping sensor.")
+                    sampleCounter = 0 // Reset the counter
+                }
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

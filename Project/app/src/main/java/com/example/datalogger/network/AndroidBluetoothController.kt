@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
+import com.example.datalogger.sensor.SensorConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -48,8 +49,9 @@ class AndroidBluetoothController(
     private val bluetoothAdapter by lazy {
         bluetoothManager?.adapter
     }
+    private val sensorConfig = SensorConfig()
 
-    private val commandInterpeter = CommandInterpreter(channelRepository)
+    private val commandInterpeter = CommandInterpreter(sensorConfig, channelRepository)
 
     //it checks if the device is connected
     private val _isConnected = MutableStateFlow(false)

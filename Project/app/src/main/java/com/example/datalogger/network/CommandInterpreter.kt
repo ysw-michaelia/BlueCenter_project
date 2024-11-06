@@ -1,12 +1,16 @@
 package com.example.datalogger.network
 
 
+import android.content.Context
+import android.hardware.Sensor
 import com.example.datalogger.repository.ChannelRepository
 import com.example.datalogger.state.BluetoothViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.example.datalogger.sensor.SensorConfig
+import com.example.datalogger.sensor.SensorController
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
@@ -15,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 
 
 class CommandInterpreter(
+    private val sensorConfig: SensorConfig,
     private val repository: ChannelRepository
 ) {
 
@@ -49,6 +54,8 @@ class CommandInterpreter(
 
     private fun setNumberOfSamples(params: String): MutableList<String> {
         val samples = params.toIntOrNull() ?: return mutableListOf("Error: Invalid sample number")
+        sensorConfig.setSampleCount(samples)
+        Log.d("CommandInterpreter", "Sample count set to $samples")
         return mutableListOf("SAMPLES=$samples\nOK")
     }
 
@@ -109,10 +116,12 @@ class CommandInterpreter(
         val channelIds = params.split(":").mapNotNull { it.toIntOrNull() }
         Log.d("CommandInterpreter", "Parsed channel IDs: $channelIds")
 
+
         // Using runBlocking to make the function wait for coroutine completion before returning
         runBlocking(Dispatchers.IO) {
             channelIds.forEach { channelId ->
                 try {
+
                     val channel = repository.getChannelById(channelId).firstOrNull()
 
                     if (channel != null) {

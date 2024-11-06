@@ -6,13 +6,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
+import com.example.datalogger.sensor.SensorConfig
 import com.example.datalogger.sensor.SensorController
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 //Future view model that will be used to store the state of the sensors
-class SensorViewModel(application: Application): AndroidViewModel(application) {
-    private val sensorController = SensorController(application)
+class SensorViewModel(application: Application) : AndroidViewModel(application) {
+    private val sensorController = SensorController(application, SensorConfig())
     private val channelRepository: ChannelRepository = DatabaseModule.repository
 
     //toggle monitoring for a given channel by ID
