@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 //actual database class, syntax copied by a video tutorial
 @Database(
     entities = [Channel::class],
-    version = 3,
+    version = 4,
 )
 abstract class ChannelsDatabase : RoomDatabase() {
 
@@ -29,13 +29,18 @@ abstract class ChannelsDatabase : RoomDatabase() {
             }
         }
 
-        // Migration from version 1 to 2
+        // Migration from version 2 to 3
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE Channel ADD COLUMN staticValue FLOAT DEFAULT 0 NOT NULL; ADD COLUMN startTime STRING DEFAULT \"00:00\" NOT NULL; ADD COLUMN stopTime STRING DEFAULT \"00:00\" NOT NULL;")
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE Channel ADD COLUMN isStatic INTEGER DEFAULT 0 NOT NULL")
+            }
+        }
 
         // Get the database instance with migration
         fun getDatabase(context: Context): ChannelsDatabase {
@@ -45,7 +50,7 @@ abstract class ChannelsDatabase : RoomDatabase() {
                     ChannelsDatabase::class.java,
                     "channels.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3) // 添加迁移
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4) // 添加迁移
                     .build()
                 INSTANCE = instance
                 instance

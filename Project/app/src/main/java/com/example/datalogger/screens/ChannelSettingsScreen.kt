@@ -70,12 +70,11 @@ fun ChannelSettingsScreen(
             var dummySensorOutput by remember { mutableStateOf(channel.staticValue) }
             var newStartTime by remember { mutableStateOf(channel.startTime) }
             var newStopTime by remember { mutableStateOf(channel.stopTime) }
-            var static by remember { mutableStateOf(false) }
-            var timeKeeping by remember { mutableStateOf("single") }
-            var begHour by remember { mutableStateOf("") }
-            var begMinute by remember { mutableStateOf("") }
-            var endHour by remember { mutableStateOf("") }
-            var endMinute by remember { mutableStateOf("") }
+            var static by remember { mutableStateOf(channel.isStatic) }
+            var begHour by remember { mutableStateOf(channel.startTime.split(":")[0]) }
+            var begMinute by remember { mutableStateOf(channel.startTime.split(":")[1]) }
+            var endHour by remember { mutableStateOf(channel.stopTime.split(":")[0]) }
+            var endMinute by remember { mutableStateOf(channel.stopTime.split(":")[1]) }
             var firstError by remember { mutableStateOf(false) }
             var secondError by remember { mutableStateOf(false) }
             var newSubmission by remember { mutableStateOf(false) }
@@ -91,7 +90,12 @@ fun ChannelSettingsScreen(
                             channelId = channelId,
                             name = editedChannelName,
                             sensorName = editedSensorName,
-                            sensorType = editedSensorType))
+                            sensorType = editedSensorType,
+                            isStatic = static,
+                            staticValue = dummySensorOutput,
+                            startTime = newStartTime,
+                            stopTime = newStopTime,
+                            ))
                         navController.navigate("slave_home")
                     }
                 ) {
@@ -112,7 +116,10 @@ fun ChannelSettingsScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = static == false,
-                    onClick = { static = false }
+                    onClick = {
+                        static = false
+                        dummySensorOutput = 0F
+                    }
                 )
                 Text("Sensor")
             }
@@ -120,7 +127,11 @@ fun ChannelSettingsScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = static == true,
-                    onClick = { static = true }
+                    onClick = {
+                        static = true
+                        editedSensorName = "None"
+                        editedSensorType = 0
+                    }
                 )
                 Text("Static Digit")
             }
@@ -146,142 +157,125 @@ fun ChannelSettingsScreen(
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = timeKeeping == "single",
-                    onClick = { timeKeeping = "single" }
-                )
-                Text("No timestamp")
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = timeKeeping == "timestamp",
-                    onClick = { timeKeeping = "timestamp" }
-                )
-                Text("Timestamp")
-            }
-
             //Question: Should the timestamp be based on a real clock or based on the sensor?
-            if ((timeKeeping == "timestamp")){
-                Row {
-                    Text("Beginning Timestamp: ")
-                }
-                Row {
-                    //text field to change the start time
-                    TextField(
-                        value = begHour,
-                        onValueChange = { begHour = it },
-                        label = { Text("Edit Hour") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
-                    Text(":")
-                    TextField(
-                        value = begMinute,
-                        onValueChange = { begMinute = it },
-                        label = { Text("Edit Minute") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
-                }
-                Row {
-                    Text("Ending Timestamp: ")
-                }
-                Row {
-                    //text field to change the timer
-                    TextField(
-                        value = endHour,
-                        onValueChange = { endHour = it },
-                        label = { Text("Edit Hour") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
-                    Text(":")
-                    TextField(
-                        value = endMinute,
-                        onValueChange = { endMinute = it },
-                        label = { Text("Edit Minute") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1F)
-                    )
+             Row {
+                 Text("Beginning Timestamp: ")
+             }
+            Row {
+                //text field to change the start time
+                TextField(
+                    value = begHour,
+                    onValueChange = { begHour = it },
+                    label = { Text("Edit Hour") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1F)
+                )
+                Text(":")
+                TextField(
+                    value = begMinute,
+                    onValueChange = { begMinute = it },
+                    label = { Text("Edit Minute") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1F)
+                )
+            }
+            Row {
+                Text("Ending Timestamp: ")
+            }
+            Row {
+                //text field to change the timer
+                TextField(
+                    value = endHour,
+                    onValueChange = { endHour = it },
+                    label = { Text("Edit Hour") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1F)
+                )
+                Text(":")
+                TextField(
+                    value = endMinute,
+                    onValueChange = { endMinute = it },
+                    label = { Text("Edit Minute") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1F)
+                )
 
-                }
-                Row {
-                    Button(onClick = {
-                        if (begHour != "" &&  begMinute != "" && endHour != "" &&  endMinute != "" && begHour.all { c: Char -> c.isDigit() } && begMinute.all { c: Char -> c.isDigit()} && endHour.all { c: Char -> c.isDigit() } && endMinute.all { c: Char -> c.isDigit() }) {
-                            if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
-                                newSubmission = false
-                                firstError = true
-                            }
-                            else {
-                                firstError = false
-                            }
-                            if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || endMinute.toInt() < 0) {
-                                newSubmission = false
-                                secondError = true
-                            }
-                            else {
-                                secondError = false
-                            }
-                            if (!firstError && !secondError) {
-                                if (begHour.length < 2) {
-                                    begHour = "0$begHour"
-                                }
-                                if (begMinute.length < 2) {
-                                    begMinute = "0$begMinute"
-                                }
-                                if (endHour.length < 2) {
-                                    endHour = "0$endHour"
-                                }
-                                if (endMinute.length < 2) {
-                                    endMinute = "0$endMinute"
-                                }
-                                newStartTime = "$begHour:$begMinute"
-                                newStopTime = "$endHour:$endMinute"
-                                newSubmission = true
-                            }
+            }
+            Row {
+                Button(onClick = {
+                    if (begHour != "" &&  begMinute != "" && endHour != "" &&  endMinute != "" && begHour.all { c: Char -> c.isDigit() } && begMinute.all { c: Char -> c.isDigit()} && endHour.all { c: Char -> c.isDigit() } && endMinute.all { c: Char -> c.isDigit() }) {
+                        if (begHour.toInt() >= 24 || begHour.toInt() < 0 || begMinute.toInt() >= 60 || begMinute.toInt() < 0) {
+                            newSubmission = false
+                            firstError = true
                         }
                         else {
-                            newSubmission = false
-                            firstError =
-                                if (begHour == "" || begMinute == "" || !begHour.all { c: Char -> c.isDigit() } || !begMinute.all { c: Char -> c.isDigit()}) {
-                                    true
-                                } else {
-                                    false
-                                }
-                            secondError =
-                                if (endHour == "" ||  endMinute == "" || !endHour.all { c: Char -> c.isDigit() } || !endMinute.all { c: Char -> c.isDigit() }) {
-                                    true
-                                } else {
-                                    false
-                                }
+                            firstError = false
                         }
+                        if (endHour.toInt() >= 24 || endHour.toInt() < 0 || endMinute.toInt() >= 60 || endMinute.toInt() < 0) {
+                            newSubmission = false
+                            secondError = true
+                        }
+                        else {
+                            secondError = false
+                        }
+                        if (!firstError && !secondError) {
+                            if (begHour.length < 2) {
+                                begHour = "0$begHour"
+                            }
+                            if (begMinute.length < 2) {
+                                begMinute = "0$begMinute"
+                            }
+                            if (endHour.length < 2) {
+                                endHour = "0$endHour"
+                            }
+                            if (endMinute.length < 2) {
+                                endMinute = "0$endMinute"
+                            }
+                            newStartTime = "$begHour:$begMinute"
+                            newStopTime = "$endHour:$endMinute"
+                            newSubmission = true
+                        }
+                    }
+                    else {
+                        newSubmission = false
+                        firstError =
+                            if (begHour == "" || begMinute == "" || !begHour.all { c: Char -> c.isDigit() } || !begMinute.all { c: Char -> c.isDigit()}) {
+                                true
+                            } else {
+                                false
+                            }
+                        secondError =
+                            if (endHour == "" ||  endMinute == "" || !endHour.all { c: Char -> c.isDigit() } || !endMinute.all { c: Char -> c.isDigit() }) {
+                                true
+                            } else {
+                                false
+                            }
+                    }
 
-                    }) {
-                        Text("Submit Timestamps")
-                    }
+                }) {
+                    Text("Submit Timestamps")
                 }
-                if (firstError) {
-                    Row {
-                        Text("ERROR: Beginning time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
-                    }
+            }
+            if (firstError) {
+                Row {
+                    Text("ERROR: Beginning time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
                 }
-                if (secondError) {
-                    Row {
-                        Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
-                    }
+            }
+            if (secondError) {
+                Row {
+                    Text("ERROR: End time stamp invalid, hours must be between 0-23, minutes must be between 0-59, both must be whole numbers (no decimal), and must not be null")
                 }
-                if (newSubmission) {
-                    Row {
-                        Text("New Start time: $newStartTime")
-                    }
-                    Row {
-                        Text("New Stop time: $newStopTime")
-                    }
+            }
+            if (newSubmission) {
+                Row {
+                    Text("New Start time: $newStartTime")
+                }
+                Row {
+                    Text("New Stop time: $newStopTime")
                 }
             }
         }
+
     }
 }
 
