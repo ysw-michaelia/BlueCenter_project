@@ -28,6 +28,8 @@ data class Channel(
     var stopTime: String = "00:00", //stop time
     @ColumnInfo(name = "has_trigger_level")
     var hasTriggerLevel: Boolean = false, //checks if it has a trigger level
+    @ColumnInfo(name = "above_trigger_level")
+    var aboveTriggerLevel: Boolean = true, //determines if we get samples above trigger, if false we get below
     @ColumnInfo(name = "trigger_level")
     var triggerLevel: Float = 0F, //trigger level
     )

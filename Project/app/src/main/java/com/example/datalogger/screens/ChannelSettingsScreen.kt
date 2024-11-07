@@ -77,6 +77,7 @@ fun ChannelSettingsScreen(
             var endMinute by remember { mutableStateOf(channel.stopTime.split(":")[1]) }
             var triggered by remember { mutableStateOf(channel.hasTriggerLevel) }
             var newTriggerLevel by remember { mutableStateOf(channel.triggerLevel) }
+            var aboveBelow by remember { mutableStateOf(channel.aboveTriggerLevel) }
             var firstError by remember { mutableStateOf(false) }
             var secondError by remember { mutableStateOf(false) }
             var newSubmission by remember { mutableStateOf(false) }
@@ -97,6 +98,9 @@ fun ChannelSettingsScreen(
                             staticValue = dummySensorOutput,
                             startTime = newStartTime,
                             stopTime = newStopTime,
+                            hasTriggerLevel = triggered,
+                            aboveTriggerLevel = aboveBelow,
+                            triggerLevel = newTriggerLevel
                             ))
                         navController.navigate("slave_home")
                     }
@@ -182,15 +186,36 @@ fun ChannelSettingsScreen(
             }
 
             if(triggered) {
-                Text("Trigger Level: ")
-                //text field to change the static digit
-                TextField(
-                    value = dummySensorOutput.toString(),
-                    onValueChange = { dummySensorOutput = it.toFloat() },
-                    label = { Text("Edit Static Number") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row {
+                    Text("Trigger Level: ")
+                    //text field to change the static digit
+                    TextField(
+                        value = dummySensorOutput.toString(),
+                        onValueChange = { dummySensorOutput = it.toFloat() },
+                        label = { Text("Edit Static Number") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = aboveBelow == true,
+                        onClick = {
+                            aboveBelow = true
+                        }
+                    )
+                    Text("Sample above trigger level")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = aboveBelow == false,
+                        onClick = {
+                            aboveBelow = false
+                        }
+                    )
+                    Text("Sample below trigger level")
+                }
             }
             else {
                 Row {

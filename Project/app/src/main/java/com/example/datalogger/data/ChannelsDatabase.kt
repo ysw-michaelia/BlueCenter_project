@@ -44,7 +44,13 @@ abstract class ChannelsDatabase : RoomDatabase() {
 
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE Channel ADD COLUMN isStatic INTEGER DEFAULT 0 NOT NULL; ADD COLUMN staticValue FLOAT DEFAULT 0 NOT NULL")
+                database.execSQL("ALTER TABLE Channel ADD COLUMN hasTriggerLevel INTEGER DEFAULT 0 NOT NULL; ADD COLUMN triggerLevel FLOAT DEFAULT 0 NOT NULL")
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE Channel ADD COLUMN aboveTriggerLevel INTEGER DEFAULT 0 NOT NULL")
             }
         }
 
