@@ -213,7 +213,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                         val message = result.message
 
                         // Add the new message to the list for that device
-                        val updatedMessages = currentMessages + "$slaveName: $message"
+                        val updatedMessages = currentMessages + "$slaveName: \n$message"
 
                         val updatedMessagesMap = currentState.interactionLog.toMutableMap().apply {
                             this[result.deviceAddress] = updatedMessages
@@ -233,7 +233,6 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
 
             }
         }.catch { throwable ->
-            Log.d("flow.", "catch dentro")
             bluetoothController.closeConnection()
             _state.update {
                 it.copy(

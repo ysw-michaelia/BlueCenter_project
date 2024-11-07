@@ -57,6 +57,8 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
     fun clearSampledData() {
         sensorDataList.clear()
         _isSamplingRequested.update { false }
+    }
+    fun resetSamplesNumber() {
         _samples.update { 0 }
     }
 
@@ -72,21 +74,28 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun handleSensorData(sensorType: Int) {
+    fun handleSensorData(sensorType: Int, sensor2: Int) {
         Log.d("SensorViewModel", "Current sensor type: $currentSensorType")
         val isSampling = _isSamplingRequested.value
         val sampleLimit = _samples.value
 
-        Log.d("SensorData", "isSampling: $isSampling, sampleLimit: $sampleLimit")
+        //Log.d("SensorData", "isSampling: $isSampling, sampleLimit: $sampleLimit")
+
 
         sensorController.stopSensor(sensorType)
+        sensorController.stopSensor(sensor2)
 
         sensorController.startSensor(sensorType) { data ->
             Log.d("SensorData", data.joinToString(", "))
 
+            val formattedData = data.joinToString(",") { value ->
+                "%.4f".format(value)
+            } + "\n"
+            //Log.d("SensorData", "Formatted data: $formattedData")
+            Log.d("SensorViewModel", "Before if check: $isSampling, ${sensorDataList.size} < $sampleLimit}")
             if (isSampling && sensorDataList.size < sampleLimit) {
-                sensorDataList.add(data.joinToString(", "))
-                Log.d("SensorData", "Added to list: ${data.joinToString(", ")}")
+                sensorDataList.add(formattedData)
+                Log.d("SensorData", "Added to list: $formattedData")
             }
         }
     }

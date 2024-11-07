@@ -25,8 +25,8 @@ interface ChannelDao {
     fun getChannelById(channelId: Int): Flow<Channel>
 
     //get all the channels in the database
-    @Query("SELECT channel_sensor_type FROM channels WHERE is_activated = 1 AND channel_sensor_type != 0")
-    fun getActiveChannelWithSensor(): Flow<Int>
+    @Query("SELECT * FROM channels WHERE is_activated = 1 AND channel_sensor_type != 0")
+    fun getActiveChannelWithSensor(): Flow<List<Channel>>
 
     //get all the channels in the database
     @Query("SELECT * FROM channels")

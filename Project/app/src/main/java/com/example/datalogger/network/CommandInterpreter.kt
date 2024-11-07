@@ -3,6 +3,7 @@ package com.example.datalogger.network
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.example.datalogger.data.Channel
 import com.example.datalogger.di.DatabaseModule.repository
 import com.example.datalogger.state.SensorViewModel
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ class CommandInterpreter(
             //"[a" -> setSamplingRate(parameters)
             "[b" -> setNumberOfSamples(parameters)
             //"[c" -> setSamplingConfiguration(parameters)
-            // "[d" -> sampleAndTransferData()
+            "[d" -> sampleAndTransferData()
             "[e" -> sendSampledData()
             //"[f" -> setClock(parameters)
             "[g" -> showDeviceStatus()
@@ -61,35 +62,50 @@ class CommandInterpreter(
     }
 
     private fun sampleAndTransferData(): MutableList<String> = runBlocking {
-        var dbSensorType: Int
-        runBlocking(Dispatchers.IO) { dbSensorType = repository.getActiveChannelWithSensor().first() }
+        var channels: List<Channel>
+        runBlocking(Dispatchers.IO) { channels = repository.getActiveChannelWithSensor().first() }
+        val sampledData: MutableList<String> = mutableListOf("DATA: \n")
+        var previousSensorType: Int = 1
 
-        sensorViewModel.setSensorType(dbSensorType)
+        channels.forEach { channel->
+            val dbSensorType = channel.sensorType
+            sensorViewModel.setSensorType(dbSensorType)
+            sampledData.add("${channel.name}:\n")
 
-        val currentSensorType = sensorViewModel.currentSensorType.value
-        Log.d("CommandInterpreter", "Current sensor type: $currentSensorType")
-        if (currentSensorType == null) {
-            Log.e("CommandInterpreter", "Sampling failed: Sensor type is null.")
-            return@runBlocking mutableListOf("Error: Sensor type not set.")
-        }
-
-        if (sensorViewModel.isAnyChannelMonitoring()) {
-            sensorViewModel.startSampling()
-            sensorViewModel.handleSensorData(currentSensorType)
-
-            withTimeoutOrNull(10000) {
-                while (sensorViewModel.getSampledData().size < sensorViewModel.samples.value) {
-                    delay(100)
-                }
+            val currentSensorType = sensorViewModel.currentSensorType.value
+            Log.d("CommandInterpreter", "Current sensor type: $currentSensorType")
+            if (currentSensorType == null) {
+                Log.e("CommandInterpreter", "Sampling failed: Sensor type is null.")
+                return@runBlocking mutableListOf("Error: Sensor type not set.")
             }
 
-            val sampledData = sensorViewModel.getSampledData()
-            sampledData.add("END")
-            sensorViewModel.clearSampledData()
-            sampledData
-        } else {
-            mutableListOf("sampling failed, please start monitoring sensor first.")
+            if (sensorViewModel.isAnyChannelMonitoring()) {
+                sensorViewModel.startSampling()
+                sensorViewModel.handleSensorData(currentSensorType, previousSensorType)
+
+                Log.d("CommandInterpreter", "before waiting: ${sensorViewModel.getSampledData().size} ")
+                withTimeoutOrNull(10000) {
+                    while (sensorViewModel.getSampledData().isEmpty()) {
+                        delay(100) // Wait until data collection has at least started
+                    }
+
+                    while (sensorViewModel.getSampledData().size < sensorViewModel.samples.value) {
+                        delay(100)
+                    }
+                }
+                sampledData.addAll(sensorViewModel.getSampledData())
+                Log.d("CommandInterpreter", "after adding: ${sensorViewModel.getSampledData().size} ")
+                sensorViewModel.clearSampledData()
+                previousSensorType = currentSensorType
+                Log.d("CommandInterpreter", "after clearing: ${sensorViewModel.getSampledData().size} ")
+            }
+                else {
+                    sampledData.clear()
+                    sampledData.add("sampling failed, please start monitoring sensor first.\n")
+                }
         }
+            sampledData.add("END")
+            sampledData
     }
 
     private fun sendSampledData(): MutableList<String> {
