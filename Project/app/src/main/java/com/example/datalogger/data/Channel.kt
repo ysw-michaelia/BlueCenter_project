@@ -26,4 +26,8 @@ data class Channel(
     var startTime: String = "00:00", //start time
     @ColumnInfo(name = "stop_time")
     var stopTime: String = "00:00", //stop time
+    @ColumnInfo(name = "has_trigger_level")
+    var hasTriggerLevel: Boolean = false, //checks if it has a trigger level
+    @ColumnInfo(name = "trigger_level")
+    var triggerLevel: Float = 0F, //trigger level
     )
