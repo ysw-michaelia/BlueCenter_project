@@ -1,16 +1,19 @@
 package com.example.datalogger.network
 
 
-import com.example.datalogger.state.BluetoothViewModel
+import android.util.Log
+import com.example.datalogger.di.DatabaseModule.repository
+import com.example.datalogger.state.SensorViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
-class CommandInterpreter(
-
-) {
 
 class CommandInterpreter(
     private val sensorViewModel: SensorViewModel
 ) {
-    private var samples: Int = 0
 
     fun interpret(command: String): MutableList<String> {
         val commandType = command.take(2)
@@ -31,6 +34,8 @@ class CommandInterpreter(
             "[q" -> setStreamingRate(parameters)
             "[s" -> stopSampling()
             "[v" -> showVersion()
+            "[z" -> checkMonitoringStatus()
+            "[x" -> checkSampleNumber()
             else -> mutableListOf("Error: Unsupported Command")
         }
     }
@@ -42,6 +47,7 @@ class CommandInterpreter(
 
     private fun setNumberOfSamples(params: String): MutableList<String> {
         val samples = params.toIntOrNull() ?: return mutableListOf("Error: Invalid sample number")
+        sensorViewModel.setSamples(samples)
         return mutableListOf("SAMPLES=$samples\nOK")
     }
 
@@ -50,17 +56,35 @@ class CommandInterpreter(
         return mutableListOf("OK")
     }
 
-    private fun sampleAndTransferData(): MutableList<String> {
-        return runBlocking {
-            if (sensorViewModel.isAnyChannelMonitoring()) {
-                sensorViewModel.startSampling(samples)
+    private fun sampleAndTransferData(): MutableList<String> = runBlocking {
+        var dbSensorType: Int
+        runBlocking(Dispatchers.IO) { dbSensorType = repository.getActiveChannelWithSensor().first() }
 
-                val sampledData = sensorViewModel.getAndClearSampledData()
-                sampledData.add("END")
-                return sampledData
-            } else {
-              return mutableListOf("sampling failed, please start monitoring sensor first.")
+        sensorViewModel.setSensorType(dbSensorType)
+
+        val currentSensorType = sensorViewModel.currentSensorType.value
+        Log.d("CommandInterpreter", "Current sensor type: $currentSensorType")
+        if (currentSensorType == null) {
+            Log.e("CommandInterpreter", "Sampling failed: Sensor type is null.")
+            return@runBlocking mutableListOf("Error: Sensor type not set.")
+        }
+
+        if (sensorViewModel.isAnyChannelMonitoring()) {
+            sensorViewModel.startSampling()
+            sensorViewModel.handleSensorData(currentSensorType)
+
+            withTimeoutOrNull(10000) {
+                while (sensorViewModel.getSampledData().size < sensorViewModel.samples.value) {
+                    delay(100)
+                }
             }
+
+            val sampledData = sensorViewModel.getSampledData()
+            sampledData.add("END")
+            sensorViewModel.clearSampledData()
+            sampledData
+        } else {
+            mutableListOf("sampling failed, please start monitoring sensor first.")
         }
     }
 
@@ -73,11 +97,14 @@ class CommandInterpreter(
         val parts = params.split("-")
 
         val year = parts.getOrNull(0)?.toIntOrNull() ?: return mutableListOf("Error: Invalid year")
-        val month = parts.getOrNull(1)?.toIntOrNull() ?: return mutableListOf("Error: Invalid month")
+        val month =
+            parts.getOrNull(1)?.toIntOrNull() ?: return mutableListOf("Error: Invalid month")
         val day = parts.getOrNull(2)?.toIntOrNull() ?: return mutableListOf("Error: Invalid day")
         val hour = parts.getOrNull(3)?.toIntOrNull() ?: return mutableListOf("Error: Invalid hour")
-        val minute = parts.getOrNull(4)?.toIntOrNull() ?: return mutableListOf("Error: Invalid minute")
-        val second = parts.getOrNull(5)?.toIntOrNull() ?: return mutableListOf("Error: Invalid second")
+        val minute =
+            parts.getOrNull(4)?.toIntOrNull() ?: return mutableListOf("Error: Invalid minute")
+        val second =
+            parts.getOrNull(5)?.toIntOrNull() ?: return mutableListOf("Error: Invalid second")
 
         return mutableListOf("Clock set: $hour:$minute:$second, Date:$day/$month, Year:$year\nStatus:Ready.\nOK")
     }
@@ -114,12 +141,26 @@ class CommandInterpreter(
         return mutableListOf("rate")
     }
 
-    private fun stopSampling(): MutableList<String>{
+    private fun stopSampling(): MutableList<String> {
 
         return mutableListOf("Sampling stopped\nOK")
     }
 
     private fun showVersion(): MutableList<String> {
         return mutableListOf("DataLogger App Version: 1.0.0\nOK")
+    }
+
+    private fun checkMonitoringStatus(): MutableList<String> {
+        return runBlocking {
+            if (sensorViewModel.isAnyChannelMonitoring()) {
+                mutableListOf("MonitoringStatus", "At least one channel is active.")
+            } else {
+                mutableListOf("MonitoringStatus", "No active channels.")
+            }
+        }
+    }
+
+    private fun checkSampleNumber(): MutableList<String> {
+        return mutableListOf(sensorViewModel.samples.value.toString())
     }
 }

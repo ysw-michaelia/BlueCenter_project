@@ -5,6 +5,10 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SensorController(private val context: Context) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -15,8 +19,13 @@ class SensorController(private val context: Context) {
     }
 
     // Start recording for a sensor, if not already started
-    fun startSensor(sensor: Sensor, onDataReceived: (FloatArray) -> Unit) {
-        val sensorType = sensor.type
+    fun startSensor(sensorType: Int, onDataReceived: (FloatArray) -> Unit) {
+        val sensor = sensorManager.getDefaultSensor(sensorType)
+        if (sensor == null) {
+            Log.e("SensorController", "Sensor type $sensorType not found.")
+            return
+        }
+
         val (listener, count) = activeSensorListeners[sensorType] ?: createSensorListener(sensor, onDataReceived)
 
         //if new, register listener
@@ -42,12 +51,22 @@ class SensorController(private val context: Context) {
         }
     }
 
+    fun stopAllSensors() {
+        for ((sensorType, listenerCountPair) in activeSensorListeners) {
+            val (listener, count) = listenerCountPair
+            sensorManager.unregisterListener(listener)
+        }
+        activeSensorListeners.clear()
+    }
+
     // Helper function to create a new listener for a sensor
     private fun createSensorListener(sensor: Sensor, onDataReceived: (FloatArray) -> Unit): Pair<SensorEventListener, Int> {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 // callback
-                onDataReceived(event.values)
+                CoroutineScope(Dispatchers.IO).launch {
+                    onDataReceived(event.values)
+                }
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

@@ -55,6 +55,7 @@ fun SlaveHomeScreen(
     val channelCount by channelViewModel.channelCount.observeAsState()
     val channelList by channelViewModel.channelList.observeAsState(emptyList())
     val actualChannelCount by setupViewModel.totChannels.observeAsState(0)
+
     //if the database is empty, create the channels, using launched effect to avoid
     //unexpected behaviour
     Scaffold(
@@ -85,6 +86,7 @@ fun SlaveHomeScreen(
                             channelViewModel.deleteChannels()
                             bluetoothViewModel.disconnectFromDevice()
                             navController.navigate("setup")
+                            sensorViewModel.stopAllSensors()
                         },
                         modifier = Modifier.padding(top = 40.dp, start = 100.dp)
                     ) {
