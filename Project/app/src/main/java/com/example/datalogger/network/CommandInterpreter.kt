@@ -20,19 +20,19 @@ class CommandInterpreter(
         val parameters = command.drop(3)
 
         return when (commandType) {
-            "[a" -> setSamplingRate(parameters)
+            //"[a" -> setSamplingRate(parameters)
             "[b" -> setNumberOfSamples(parameters)
-            "[c" -> setSamplingConfiguration(parameters)
-            "[d" -> sampleAndTransferData()
+            //"[c" -> setSamplingConfiguration(parameters)
+            // "[d" -> sampleAndTransferData()
             "[e" -> sendSampledData()
-            "[f" -> setClock(parameters)
+            //"[f" -> setClock(parameters)
             "[g" -> showDeviceStatus()
-            "[h" -> setWaitTime(parameters)
+            //"[h" -> setWaitTime(parameters)
             "[i" -> displayTime()
             "[o" -> setActiveChannels(parameters)
-            "[p" -> showMode()
-            "[q" -> setStreamingRate(parameters)
-            "[s" -> stopSampling()
+            //"[p" -> showMode()
+            //"[q" -> setStreamingRate(parameters)
+            //"[s" -> stopSampling()
             "[v" -> showVersion()
             "[z" -> checkMonitoringStatus()
             "[x" -> checkSampleNumber()
@@ -110,8 +110,20 @@ class CommandInterpreter(
     }
 
     private fun showDeviceStatus(): MutableList<String> {
-        //return "Frequency: ${status.frequency}\nSamples: ${status.samples}\nNr of active channels: ${status.activeChannels}\nStatus: ${status.status}\nOK"
-        return mutableListOf("status")
+        val responseMessages = mutableListOf<String>()
+        val samples = sensorViewModel.samples.value
+        Log.d("CommandInterpreter", "Samples: $samples")
+        responseMessages.add("Samples: ${samples}\n")
+        runBlocking(Dispatchers.IO) {
+            val channels = repository.getActiveChannels().first()
+            val channelCount = channels.size
+            responseMessages.add("Number of active channels: $channelCount\n")
+            Log.d("CommandInterpreter", "Number of active channels: $channelCount")
+        }
+
+        responseMessages.add("OK")
+        Log.d("CommandInterpreter", "response: ${responseMessages.joinToString()}")
+        return responseMessages
     }
 
     private fun setWaitTime(params: String): MutableList<String> {
@@ -120,14 +132,47 @@ class CommandInterpreter(
         return mutableListOf("second")
     }
 
+    @SuppressLint("NewApi")
     private fun displayTime(): MutableList<String> {
-        //return "Clock set: ${currentTime.time}, Date:${currentTime.date}\nOK"
-        return mutableListOf("TIME")
+        val currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        return mutableListOf("Current DateTime: $currentDateTime")
+
     }
 
     private fun setActiveChannels(params: String): MutableList<String> {
-        val channels = params.split(":").map { it.toInt() }
-        return mutableListOf("Active channels set\nOK")
+        val responseMessages = mutableListOf<String>()
+        val channelIds = params.split(":").mapNotNull { it.toIntOrNull() }
+        Log.d("CommandInterpreter", "Parsed channel IDs: $channelIds")
+
+        // Using runBlocking to make the function wait for coroutine completion before returning
+        runBlocking(Dispatchers.IO) {
+            channelIds.forEach { channelId ->
+                try {
+                    val channel = repository.getChannelById(channelId).firstOrNull()
+
+                    if (channel != null) {
+                        channel.isActivated = true
+                        repository.upsertChannel(channel) // Update channel status
+                        Log.d("CommandInterpreter", "Channel $channelId activated.\nOK")
+                        responseMessages.add("Channel $channelId activated.\nOK")
+                    } else {
+                        Log.d("CommandInterpreter", "Error: Channel $channelId not found.")
+                        responseMessages.add("Error: Channel $channelId not found.")
+                    }
+                } catch (e: Exception) {
+                    Log.e("CommandInterpreter", "Exception for channel $channelId: ${e.message}")
+                    responseMessages.add("Error: Unable to update channel $channelId. Exception: ${e.message}")
+                }
+            }
+        }
+
+        // If no channels were activated, add a message
+        if (responseMessages.isEmpty()) {
+            responseMessages.add("No channels were activated.")
+        }
+
+        Log.d("CommandInterpreter", "response: ${responseMessages.joinToString()}")
+        return responseMessages
     }
 
     private fun showMode(): MutableList<String> {
