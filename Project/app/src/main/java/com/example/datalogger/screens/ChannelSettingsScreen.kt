@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.datalogger.data.Channel
 import com.example.datalogger.state.ChannelViewModel
+import com.example.datalogger.state.SensorViewModel
 
 //screen for individual channel settings
 @Composable
@@ -39,6 +40,7 @@ fun ChannelSettingsScreen(
     channelId: Int,
     navController: NavController,
     channelViewModel: ChannelViewModel,
+    sensorViewModel: SensorViewModel,
     modifier: Modifier = Modifier
 ) {
 
@@ -75,7 +77,13 @@ fun ChannelSettingsScreen(
                             name = editedChannelName,
                             sensorName = editedSensorName,
                             sensorType = editedSensorType,
-                            isActivated = channelIsActive))
+                            isActivated = channelIsActive,
+                            isStatic = static,
+                            staticValue = dummySensorOutput,
+                            startTime = newStartTime,
+                            stopTime = newStopTime,
+                            ))
+                        sensorViewModel.timeChecking(channelId)
                         navController.navigate("slave_home")
                     }
                 ) {

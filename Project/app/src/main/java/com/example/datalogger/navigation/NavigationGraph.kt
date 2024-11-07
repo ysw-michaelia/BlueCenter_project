@@ -60,6 +60,7 @@ fun NavGraph(
             ChannelSettingsScreen(
                 navController = navController,
                 channelViewModel = channelViewModel,
+                sensorViewModel = sensorViewModel,
                 channelId = channelId!!
             )
         }

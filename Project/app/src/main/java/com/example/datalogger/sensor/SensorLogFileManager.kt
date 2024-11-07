@@ -15,23 +15,24 @@ class SensorLogFileManager(private val context: Context) {
     var isRecording = false
 
     //create file with unique name and file header
-    fun createFile(channels: List<String>) {
-        val fileName = "datalog_$fileIndex.txt"
+    fun createFile(channel: String) {
+        val fileName = "datalog_$channel.txt"
         file = File(context.filesDir, fileName)
         fileOutputStream = FileOutputStream(file, true)
 
-        val header = "Date/Time\t" + channels.joinToString("\t") + "\n"
+        val header = "Date/Time\t$channel\n"
         fileOutputStream?.write(header.toByteArray())
+
         fileIndex++
         isRecording = true
     }
 
     //start recording data
-    fun startLogging(dataMap: Map<String, Any>) {
+    fun startLogging(sensorData: Any) {
         if (isRecording) {
             fileOutputStream?.let {
                 val timestamp = dateFormat.format(Date())
-                val dataRow = timestamp + "\t" + dataMap.values.joinToString("\t") + "\n"
+                val dataRow = "$timestamp\t$sensorData\n"
                 it.write(dataRow.toByteArray())
                 it.flush()
             }

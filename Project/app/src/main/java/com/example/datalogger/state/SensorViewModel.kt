@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.datalogger.di.DatabaseModule
 import com.example.datalogger.repository.ChannelRepository
 import com.example.datalogger.sensor.SensorController
+import com.example.datalogger.sensor.SensorLogFileManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,10 +16,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 //Future view model that will be used to store the state of the sensors
 class SensorViewModel(application: Application): AndroidViewModel(application) {
     private val sensorController = SensorController(application)
+    private val sensorLogFileManager = SensorLogFileManager(application)
     private val channelRepository: ChannelRepository = DatabaseModule.repository
     private val sensorDataList = mutableListOf<String>()  //save sampling data
 
@@ -37,6 +42,8 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         val channels = channelRepository.allChannels().first()
         return channels.any { it.isActivated }
     }
+
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     fun setSamples(samples: Int) {
         _samples.update { samples }
@@ -58,11 +65,13 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         sensorDataList.clear()
         _isSamplingRequested.update { false }
     }
+
     fun resetSamplesNumber() {
         _samples.update { 0 }
+
     }
 
-    private fun registerAndStartSampling(sensorType: Int) {
+    private fun registerAndStartMonitoring(sensorType: Int) {
         Log.d("SensorViewModel", "Registering sampling for sensor type: $sensorType")
         val sensor = sensorController.getSensorByType(sensorType)
         if (sensor != null) {
@@ -117,12 +126,75 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
                 if (isMonitoring) {
                     _currentSensorType.value = it.sensorType
                     Log.d("SensorViewModel", "Sensor type: ${_currentSensorType.value}")
-                    registerAndStartSampling(it.sensorType)
+                    registerAndStartMonitoring(it.sensorType)
                 } else {
                     sensorController.stopSensor(it.sensorType)
                 }
             }
         }
+    }
+
+    fun timeChecking(channelId: Int) {
+        viewModelScope.launch {
+            val channel = channelRepository.getChannelById(channelId).firstOrNull()
+
+            if (channel == null) {
+                Log.d("SensorLogging", "Channel not found")
+                return@launch
+            }
+
+            val sensorType = channel.sensorType
+
+            if (sensorType == 0) {
+                Log.d("SensorLogging", "Sensor type not found")
+                return@launch
+            }
+
+            val startTime = channel.startTime.toLocalTime()
+            val stopTime = channel.stopTime.toLocalTime()
+            var currentTime = LocalTime.now()
+
+            if (currentTime.isAfter(startTime) && currentTime.isBefore(stopTime)) {
+                handleSensorLogging(channel.name, sensorType)
+            }
+
+            while (currentTime.isBefore(startTime)) {
+                currentTime = LocalTime.now()
+                delay(10000)
+                Log.d("SensorLogging", "Waiting for start time: $startTime")
+            }
+
+            Log.d("SensorLogging", "Start time reached: $startTime")
+            handleSensorLogging(channel.name, sensorType)
+
+            while (currentTime.isBefore(stopTime)) {
+                currentTime = LocalTime.now()
+                delay(10000)
+                Log.d("SensorLogging", "Local time: $currentTime Waiting for stop time: $stopTime")
+            }
+
+            Log.d("SensorLogging", "Stop time reached: $stopTime")
+            sensorLogFileManager.stopLogging()
+            sensorLogFileManager.saveFile()
+        }
+    }
+
+    private fun handleSensorLogging(channelName: String, sensorType: Int) {
+        sensorLogFileManager.createFile(channelName)
+        Log.d("SensorLogging", "Channel Name: $channelName")
+
+        if (sensorType != 0) {
+            sensorController.startSensor(sensorType) { data ->
+                Log.d("SensorData", "Sensor data: ${data.joinToString(", ")}")
+                sensorLogFileManager.startLogging(data.joinToString(", "))
+            }
+        } else {
+            Log.d("SensorLogging", "Invalid sensor type: $sensorType")
+        }
+    }
+
+    fun String.toLocalTime(): LocalTime {
+        return LocalTime.parse(this, timeFormatter)
     }
 
     fun stopAllSensors() {
