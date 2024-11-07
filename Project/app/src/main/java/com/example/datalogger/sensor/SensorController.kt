@@ -39,6 +39,7 @@ class SensorController(private val context: Context) {
 
     // Stop recording for a sensor, only if no other channels are using it
     fun stopSensor(sensorType: Int) {
+        Log.d("SensorController", "Stopping sensor $sensorType")
         val (listener, count) = activeSensorListeners[sensorType] ?: return
 
         if (count == 1) {

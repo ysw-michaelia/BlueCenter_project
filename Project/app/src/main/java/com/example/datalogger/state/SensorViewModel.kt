@@ -176,6 +176,9 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
             Log.d("SensorLogging", "Stop time reached: $stopTime")
             sensorLogFileManager.stopLogging()
             sensorLogFileManager.saveFile()
+
+            //unregister failed, check later
+            sensorController.stopSensor(channel.sensorType)
         }
     }
 
@@ -190,6 +193,59 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
             }
         } else {
             Log.d("SensorLogging", "Invalid sensor type: $sensorType")
+        }
+    }
+
+    fun triggerLevelChecking(channelId: Int, triggerLevel: Float) {
+        viewModelScope.launch {
+            val channel = channelRepository.getChannelById(channelId).firstOrNull()
+            if (channel == null) {
+                Log.d("SensorLogging", "Channel not found")
+                return@launch
+            }
+
+            val sensorType = channel.sensorType
+            if (sensorType == 0) {
+                Log.d("SensorLogging", "Sensor type not found")
+                return@launch
+            }
+
+            var startTime: Long = 0
+            var isLoggingStarted = false
+            var isLoggingStopped = false
+
+            sensorController.startSensor(sensorType) { data ->
+                Log.d("SensorData", "Sensor data: ${data.joinToString(", ")}")
+
+                if (data.first() >= triggerLevel) {
+                    if (startTime == 0L) {
+                        startTime = System.currentTimeMillis()
+                    }
+
+                    if (!isLoggingStarted && System.currentTimeMillis() - startTime >= 5000) {
+                        sensorLogFileManager.createFile(channel.name)
+                        sensorLogFileManager.startLogging(data.joinToString(", "))
+                        isLoggingStarted = true
+                        Log.d("SensorLogging", "Logging started")
+                    }
+
+                } else {
+                    if (isLoggingStarted && System.currentTimeMillis() - startTime >= 5000) {
+                        sensorLogFileManager.stopLogging()
+                        sensorLogFileManager.saveFile()
+                        isLoggingStopped = true
+                        Log.d("SensorLogging", "Logging stopped and saved")
+                    }
+                }
+
+                if (isLoggingStarted && isLoggingStopped) {
+                    startTime = System.currentTimeMillis()  // 重置开始时间
+                    isLoggingStarted = false
+                    isLoggingStopped = false
+                    Log.d("SensorLogging", "Sensor stopped")
+                    sensorController.stopSensor(sensorType)
+                }
+            }
         }
     }
 

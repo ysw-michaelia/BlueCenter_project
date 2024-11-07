@@ -5,25 +5,21 @@ package com.example.datalogger.screens
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
-import android.widget.TimePicker
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.RadioButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TimeInput
-import androidx.compose.material3.TimePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -80,6 +75,7 @@ fun ChannelSettingsScreen(
             var endMinute by remember { mutableStateOf(channel.stopTime.split(":")[1]) }
             var triggered by remember { mutableStateOf(channel.hasTriggerLevel) }
             var newTriggerLevel by remember { mutableStateOf(channel.triggerLevel) }
+            var hasTriggerLevel by remember { mutableStateOf(false) }
             var firstError by remember { mutableStateOf(false) }
             var secondError by remember { mutableStateOf(false) }
             var newSubmission by remember { mutableStateOf(false) }
@@ -101,8 +97,14 @@ fun ChannelSettingsScreen(
                             staticValue = dummySensorOutput,
                             startTime = newStartTime,
                             stopTime = newStopTime,
+                            triggerLevel = newTriggerLevel,
+                            hasTriggerLevel = hasTriggerLevel
                             ))
-                        sensorViewModel.timeChecking(channelId)
+                        if (hasTriggerLevel) {
+                            sensorViewModel.triggerLevelChecking(channelId, newTriggerLevel)
+                        } else {
+                            sensorViewModel.timeChecking(channelId)
+                        }
                         navController.navigate("slave_home")
                     }
                 ) {
@@ -122,7 +124,7 @@ fun ChannelSettingsScreen(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = static == false,
+                    selected = !static,
                     onClick = {
                         static = false
                         dummySensorOutput = 0F
@@ -133,7 +135,7 @@ fun ChannelSettingsScreen(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = static == true,
+                    selected = static,
                     onClick = {
                         static = true
                         editedSensorName = "None"
@@ -165,7 +167,7 @@ fun ChannelSettingsScreen(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = triggered == false,
+                    selected = !triggered,
                     onClick = {
                         triggered = false
                         newTriggerLevel = 0F
@@ -176,7 +178,7 @@ fun ChannelSettingsScreen(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = triggered == true,
+                    selected = triggered,
                     onClick = {
                         triggered = true
                         newStartTime = "00:00"
@@ -190,8 +192,14 @@ fun ChannelSettingsScreen(
                 Text("Trigger Level: ")
                 //text field to change the static digit
                 TextField(
-                    value = dummySensorOutput.toString(),
-                    onValueChange = { dummySensorOutput = it.toFloat() },
+                    value = newTriggerLevel.toString(),
+                    onValueChange = {
+                        val parsedValue = it.toFloatOrNull()
+                        Log.d("SensorLogging", "Parsed trigger level: $parsedValue")
+                        newTriggerLevel = parsedValue ?: 0f
+                        hasTriggerLevel = newTriggerLevel != 0f
+                        Log.d("SensorLogging", "Has trigger level: $hasTriggerLevel")
+                    },
                     label = { Text("Edit Static Number") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
