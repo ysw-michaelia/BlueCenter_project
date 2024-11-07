@@ -193,11 +193,11 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun String.toLocalTime(): LocalTime {
-        return LocalTime.parse(this, timeFormatter)
-    }
-
     fun stopAllSensors() {
         sensorController.stopAllSensors()
+    }
+
+    private fun String.toLocalTime(): LocalTime {
+        return LocalTime.parse(this, timeFormatter)
     }
 }
