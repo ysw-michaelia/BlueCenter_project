@@ -1,5 +1,6 @@
 package com.example.datalogger.state
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -43,6 +44,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         return channels.any { it.isActivated }
     }
 
+    @SuppressLint("NewApi")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     fun setSamples(samples: Int) {
@@ -134,6 +136,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    @SuppressLint("NewApi")
     fun timeChecking(channelId: Int) {
         viewModelScope.launch {
             val channel = channelRepository.getChannelById(channelId).firstOrNull()
@@ -253,6 +256,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         sensorController.stopAllSensors()
     }
 
+    @SuppressLint("NewApi")
     private fun String.toLocalTime(): LocalTime {
         return LocalTime.parse(this, timeFormatter)
     }

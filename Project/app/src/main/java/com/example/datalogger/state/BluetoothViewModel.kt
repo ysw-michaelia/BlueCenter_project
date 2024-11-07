@@ -229,7 +229,28 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                     }
                 }
 
-                is ConnectionResult.FileReceived -> TODO()
+                is ConnectionResult.FileReceived -> {
+                    _state.update { currentState ->
+                        val currentMessages =
+                            currentState.interactionLog[result.deviceAddress] ?: emptyList()
+
+                        // Add the new message to the list for that device
+                        val updatedMessages = currentMessages + "File ${result.file.name} received \n"
+
+                        val updatedMessagesMap = currentState.interactionLog.toMutableMap().apply {
+                            this[result.deviceAddress] = updatedMessages
+                        }
+                        val updatedIsTalking = currentState.isTalking.toMutableMap().apply {
+                            this[result.deviceAddress] =
+                                false  // Set isTalking to false for the disconnected address
+                        }
+
+                        currentState.copy(
+                            interactionLog = updatedMessagesMap,
+                            isTalking = updatedIsTalking
+                        )
+                    }
+                }
 
             }
         }.catch { throwable ->
