@@ -196,7 +196,7 @@ class AndroidBluetoothController(
                 // Process each client connection
                 launch {
                     val device = clientSocket.remoteDevice
-                    val service = BluetoothDataTransferService(clientSocket, commandInterpeter, onClientDisconnect)
+                    val service = BluetoothDataTransferService(clientSocket, context, commandInterpeter, onClientDisconnect)
                     dataTransferServices[device.address] = service
 
                     // Handle incoming data from client
@@ -206,6 +206,7 @@ class AndroidBluetoothController(
                     }
 
                     service.listenForIncomingFile().collect { incomingFile ->
+                        Log.d("BluetoothService", "Received file ")
                         send(ConnectionResult.FileReceived(incomingFile, device.address))
                     }
                 }
@@ -249,7 +250,7 @@ class AndroidBluetoothController(
                         }
                     }
 
-                    val service = BluetoothDataTransferService(socket, commandInterpeter, onClientDisconnect)
+                    val service = BluetoothDataTransferService(socket, context, commandInterpeter, onClientDisconnect)
                     dataTransferServices[device.address] = service
 
                     // Use withTimeout to avoid hanging indefinitely
@@ -310,7 +311,6 @@ class AndroidBluetoothController(
             return null
         }
 
-        service.sendFile(fileData)
 
         return "File sent successfully"
 
