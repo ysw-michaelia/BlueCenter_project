@@ -126,19 +126,12 @@ fun MasterHomeScreen(
                 Text(text = "Start server")
 
             }
+            //stop server button
             Button(onClick = bluetoothViewModel::disconnectFromDevice,
                 enabled = isServerOpen)
             {
                 Text(text = "Stop server")
             }
-        }
-        Button(
-            onClick = {
-                // CHANGE THIS TO SAVE SETTINGS
-            },
-            modifier = Modifier.padding(top = 40.dp, start = 100.dp)
-        ) {
-            Text(text = "Save settings")
         }
     }
 

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 //Future view model that will be used to store the state of the sensors
 class SensorViewModel(application: Application): AndroidViewModel(application) {
@@ -100,7 +101,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
             Log.d("SensorData", data.joinToString(", "))
 
             val formattedData = data.joinToString(",") { value ->
-                "%.4f".format(value)
+                "%.4f".format(Locale.US,value)
             } + "\n"
             //Log.d("SensorData", "Formatted data: $formattedData")
             Log.d("SensorViewModel", "Before if check: $isSampling, ${sensorDataList.size} < $sampleLimit}")

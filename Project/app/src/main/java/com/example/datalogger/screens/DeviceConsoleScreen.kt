@@ -83,6 +83,15 @@ fun DeviceConsoleScreen(
         ) {
             Text(text = "Send Command")
         }
+        Button(
+            onClick = {
+                navController.navigate("graph_screen/${device.address}")
+            },
+            enabled = !(state.receivedMessages[device.address]?.isEmpty() ?: false),
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Text(text = "Show graph")
+        }
         InteractionLogDisplay(state.interactionLog)
     }
 }
