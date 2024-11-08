@@ -126,6 +126,7 @@ fun MasterHomeScreen(
                 Text(text = "Start server")
 
             }
+            //stop server button
             Button(onClick = bluetoothViewModel::disconnectFromDevice,
                 enabled = isServerOpen)
             {

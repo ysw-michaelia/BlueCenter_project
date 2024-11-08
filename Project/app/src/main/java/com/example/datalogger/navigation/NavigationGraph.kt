@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.datalogger.screens.ChannelSettingsScreen
 import com.example.datalogger.screens.DeviceConsoleScreen
+import com.example.datalogger.screens.GraphScreen
 import com.example.datalogger.screens.MasterHomeScreen
 import com.example.datalogger.screens.SetupScreen
 import com.example.datalogger.screens.SlaveBluetoothScreen
@@ -92,6 +93,15 @@ fun NavGraph(
                 onSendCommand = { command ->
                     bluetoothViewModel.sendCommand(command, deviceAddress)
                 }
+            )
+        }
+        composable("graph_screen/{address}") { backStackEntry ->
+            val deviceAddress = backStackEntry.arguments?.getString("address")
+            val device = bluetoothViewModel.getBluetoothDevice(deviceAddress!!)
+            GraphScreen(
+                navController = navController,
+                device = device!!,
+                bluetoothViewModel = bluetoothViewModel,
             )
         }
         //future screens

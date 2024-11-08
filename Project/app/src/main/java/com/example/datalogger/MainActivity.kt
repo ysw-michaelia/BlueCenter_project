@@ -88,23 +88,23 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            DataLoggerTheme {
+            //DataLoggerTheme {
                 val bluetoothViewModel: BluetoothViewModel = viewModel()
                 val state by bluetoothViewModel.state.collectAsState()
 
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+//                Surface(
+//                    modifier = Modifier.fillMaxSize(),
+//                    color = MaterialTheme.colorScheme.background
+//                ) {
 
                     DataLoggerApp(
                         bluetoothViewModel = bluetoothViewModel,
                         modifier = Modifier.padding(16.dp)
                     )
-                }
+                //}
             }
         }
-    }
+    //}
 }
 
 
