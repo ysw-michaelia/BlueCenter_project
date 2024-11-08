@@ -123,14 +123,6 @@ fun SlaveHomeScreen(
                         )
                     }
                 }
-                Button(
-                    onClick = {
-                        // CHANGE THIS TO SAVE SETTINGS
-                    },
-                    modifier = Modifier.padding(top = 40.dp, start = 100.dp)
-                ) {
-                    Text(text = "Save settings")
-                }
             }
         }
     )
@@ -201,7 +193,6 @@ fun SlaveHomeTopBar(navController: NavController) {
                         navController.navigate("slave_bluetooth_settings")
                     }
                 )
-
             }
         }
     )

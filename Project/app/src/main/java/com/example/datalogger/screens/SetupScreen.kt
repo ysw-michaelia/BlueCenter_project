@@ -1,5 +1,6 @@
 package com.example.datalogger.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,20 +20,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.datalogger.state.ChannelViewModel
 import com.example.datalogger.state.SetupViewModel
+import java.io.File
+import java.io.FileOutputStream
 
 //setup screen with a text and a button
 @Composable
 fun SetupScreen(
     navController: NavController,
     viewModel: SetupViewModel,
+    channelViewModel: ChannelViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     //holds the role
     var selectedRole by remember { mutableStateOf("Master") }
 
@@ -105,8 +112,20 @@ fun SetupScreen(
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
             Text("Fill in the required number of channels")
-            SlaveSetupPart(viewModel, navController)
+            SlaveSetupPart(viewModel, navController, channelViewModel, selectedTimeStamp)
         }
+    }
+
+    Button(
+        onClick = {
+            val role = selectedRole
+            val timestamp = selectedTimeStamp
+
+            saveConfiguration(context, role, timestamp)
+        },
+        modifier = Modifier.padding(top = 40.dp, start = 100.dp)
+    ) {
+        Text(text = "Save settings")
     }
 }
 
@@ -114,6 +133,8 @@ fun SetupScreen(
 fun SlaveSetupPart(
     viewModel: SetupViewModel,
     navController: NavController,
+    channelViewModel: ChannelViewModel,
+    selectedTimeStamp: String,
     modifier: Modifier = Modifier
 ) {
     //holds the number of channels entered by the user
@@ -141,6 +162,10 @@ fun SlaveSetupPart(
             viewModel.setMaster(false)
             //navigate to home screen
             navController.navigate("slave_home")
+
+            if (selectedTimeStamp == "Master Timestamp") {
+                channelViewModel.updateAllMasterTimestamps(true)
+            }
         },
         enabled = isButtonEnabled //enable or disable button depending on user input
     ) {
@@ -166,4 +191,28 @@ fun MasterSetupPart(
     ) {
         Text(text = "Done!")
     }
+}
+
+private var fileIndex = 1
+
+// Method to create and write data to the file
+fun saveConfiguration(context: Context, role: String, timestamp: String) {
+    val fileName = "configuration_$fileIndex.txt"
+
+    // Get the app's internal storage directory
+    val file = File(context.filesDir, fileName)
+
+    // Open a FileOutputStream to write data to the file
+    val fileOutputStream = FileOutputStream(file, true)
+
+    // Format the data to be written
+    val formattedData = "role $role\n timestamp $timestamp\n"
+
+    // Write the data to the file
+    fileOutputStream.write(formattedData.toByteArray())
+    fileOutputStream.flush()
+    fileOutputStream.close()
+
+    // Increment the file index for the next file
+    fileIndex++
 }
