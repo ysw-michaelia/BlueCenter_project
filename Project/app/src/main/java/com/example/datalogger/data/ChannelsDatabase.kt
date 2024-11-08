@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 //actual database class, syntax copied by a video tutorial
 @Database(
     entities = [Channel::class],
-    version = 5,
+    version = 6,
 )
 abstract class ChannelsDatabase : RoomDatabase() {
 
@@ -47,6 +47,12 @@ abstract class ChannelsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE Channel ADD COLUMN masterTimestamp INTEGER DEFAULT 0 NOT NULL")
+            }
+        }
+
         // Get the database instance with migration
         fun getDatabase(context: Context): ChannelsDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -55,7 +61,7 @@ abstract class ChannelsDatabase : RoomDatabase() {
                     ChannelsDatabase::class.java,
                     "channels.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                 INSTANCE = instance
                 instance

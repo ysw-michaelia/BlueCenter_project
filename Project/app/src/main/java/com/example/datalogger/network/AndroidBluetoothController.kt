@@ -330,6 +330,33 @@ class AndroidBluetoothController(
         return message
     }
 
+    override suspend fun trySendTimeStamp(deviceAddress: String): Boolean {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return false
+        }
+
+        val service = dataTransferServices[deviceAddress] ?: return false
+
+        service.sendTimestamp()
+        return true
+    }
+
+    override suspend fun tryAskTimeStamp(deviceAddress: String): Boolean {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) &&
+            !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return false
+        }
+
+        val service = dataTransferServices[deviceAddress] ?: return false
+
+        service.requestTimestamp()
+        return true
+
+    }
+
     override fun getDeviceByAddress(address: String): BluetoothDevice? {
         return bluetoothAdapter?.getRemoteDevice(address)
     }

@@ -24,6 +24,8 @@ interface BluetoothController {
     suspend fun trySendCommand(command: String, deviceAddress: String): String?
     suspend fun trySendFile(fileData: ByteArray, deviceAddress: String): String?
     suspend fun trySendStringReply(message: String, deviceAddress: String): String?
+    suspend fun trySendTimeStamp(deviceAddress: String): Boolean
+    suspend fun tryAskTimeStamp(deviceAddress: String): Boolean
 
     fun closeConnection()
     fun release()

@@ -31,4 +31,6 @@ data class Channel(
     var hasTriggerLevel: Boolean = false, //checks if it has a trigger level
     @ColumnInfo(name = "trigger_level")
     var triggerLevel: Float = 0F, //trigger level
+    @ColumnInfo(name = "master_timestamp")
+    var masterTimestamp: Boolean = false, //checks if master timestamp is chosen
     )

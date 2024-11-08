@@ -44,7 +44,7 @@ fun NavGraph(
         startDestination = startDestination
     ) {
         composable("setup") {
-            SetupScreen(navController = navController, viewModel = setupViewModel)
+            SetupScreen(navController = navController, viewModel = setupViewModel, channelViewModel = channelViewModel)
         }
         composable("master_home") {
             MasterHomeScreen(

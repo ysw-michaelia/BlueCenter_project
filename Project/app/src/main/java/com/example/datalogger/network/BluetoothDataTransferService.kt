@@ -145,8 +145,6 @@ class BluetoothDataTransferService(
         return file
     }
 
-
-
     suspend fun sendFile(file: File): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -162,4 +160,30 @@ class BluetoothDataTransferService(
         }
     }
 
+    suspend fun sendTimestamp(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val timestamp = System.currentTimeMillis().toString()
+                socket.outputStream.write(timestamp.toByteArray())
+                true
+            } catch (e: IOException) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    suspend fun requestTimestamp(): Boolean {
+        val bytes = "REQUEST_TIMESTAMP".toByteArray()
+        return withContext(Dispatchers.IO) {
+            try {
+                socket.outputStream.write(bytes)
+            } catch (e: IOException) {
+                e.printStackTrace()
+                return@withContext false
+            }
+            Log.d("sent", "Inviato: ${bytes.decodeToString()}")
+            true
+        }
+    }
 }

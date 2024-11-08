@@ -21,4 +21,6 @@ class ChannelRepository(
     suspend fun upsertChannel(channel: Channel) = dao.upsertChannel(channel)
 
     suspend fun deleteAllChannels() = dao.deleteAllChannels()
+
+    suspend fun updateAllMasterTimestamps(newValue: Boolean) = dao.updateAllMasterTimestamps(newValue)
     }

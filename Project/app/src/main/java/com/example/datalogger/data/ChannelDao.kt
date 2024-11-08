@@ -1,7 +1,5 @@
 package com.example.datalogger.data
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
@@ -38,4 +36,7 @@ interface ChannelDao {
     //delete all the channels in the database
     @Query("DELETE FROM channels")
     suspend fun deleteAllChannels()
+
+    @Query("UPDATE channels SET master_timestamp = :newValue")
+    suspend fun updateAllMasterTimestamps(newValue: Boolean)
 }

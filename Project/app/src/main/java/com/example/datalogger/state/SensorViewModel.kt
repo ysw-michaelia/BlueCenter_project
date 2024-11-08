@@ -158,7 +158,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
             var currentTime = LocalTime.now()
 
             if (currentTime.isAfter(startTime) && currentTime.isBefore(stopTime)) {
-                handleSensorLogging(channel.name, sensorType)
+                handleSensorLogging(channel.masterTimestamp, channel.name, channel.sensorType)
             }
 
             while (currentTime.isBefore(startTime)) {
@@ -168,7 +168,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
             }
 
             Log.d("SensorLogging", "Start time reached: $startTime")
-            handleSensorLogging(channel.name, sensorType)
+            handleSensorLogging(channel.masterTimestamp, channel.name, channel.sensorType)
 
             while (currentTime.isBefore(stopTime)) {
                 currentTime = LocalTime.now()
@@ -185,14 +185,14 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun handleSensorLogging(channelName: String, sensorType: Int) {
+    private fun handleSensorLogging(masterTimestamp: Boolean, channelName: String, sensorType: Int) {
         sensorLogFileManager.createFile(channelName)
         Log.d("SensorLogging", "Channel Name: $channelName")
 
         if (sensorType != 0) {
             sensorController.startSensor(sensorType) { data ->
                 Log.d("SensorData", "Sensor data: ${data.joinToString(", ")}")
-                sensorLogFileManager.startLogging(data.joinToString(", "))
+                sensorLogFileManager.startLogging(masterTimestamp, data.joinToString(", "))
             }
         } else {
             Log.d("SensorLogging", "Invalid sensor type: $sensorType")
@@ -227,7 +227,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
 
                     if (!isLoggingStarted && System.currentTimeMillis() - startTime >= 5000) {
                         sensorLogFileManager.createFile(channel.name)
-                        sensorLogFileManager.startLogging(data.joinToString(", "))
+                        sensorLogFileManager.startLogging(channel.masterTimestamp, data.joinToString(", "))
                         isLoggingStarted = true
                         Log.d("SensorLogging", "Logging started")
                     }

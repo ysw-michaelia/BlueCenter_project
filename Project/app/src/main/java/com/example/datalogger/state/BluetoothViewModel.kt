@@ -151,15 +151,17 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
         }
     }
 
-    fun sendStringReply(message: String, deviceAddress: String) {
+    fun sendTimestamp(deviceAddress: String) {
         viewModelScope.launch {
-            val reply = bluetoothController.trySendStringReply(message, deviceAddress)
+            val reply = bluetoothController.trySendTimeStamp(deviceAddress)
         }
     }
 
     //future function to send file
-    fun sendFile(fileData: ByteArray) {
-        TODO()
+    fun requestTimestamp(deviceAddress: String) {
+        viewModelScope.launch {
+            val reply = bluetoothController.tryAskTimeStamp(deviceAddress)
+        }
     }
 
     fun startScan() {
@@ -191,7 +193,8 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                             isConnected = true,
                             isConnecting = false,
                             errorMessage = null,
-                            isTalking = updatedIsTalking
+                            isTalking = updatedIsTalking,
+                            currentMasterAddress = result.deviceAddress
                         )
                     }
                 }
@@ -201,12 +204,17 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                         it.copy(
                             isConnected = false,
                             isConnecting = false,
+                            currentMasterAddress = null,
                             errorMessage = result.message
                         )
                     }
                 }
 
                 is ConnectionResult.StringReceived -> {
+                    if(result.message == "REQUEST_TIMESTAMP") {
+                        sendTimestamp(result.deviceAddress)
+                    }
+                    Log.d("listen", "received string")
                     val slaveName = bluetoothController.connectedDevices.value.find { it.address == result.deviceAddress }?.name ?: "Slave"
                     _state.update { currentState->
                         val currentMessages = currentState.interactionLog[result.deviceAddress] ?: emptyList()
@@ -258,7 +266,8 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
             _state.update {
                 it.copy(
                     isConnected = false,
-                    isConnecting = false
+                    isConnecting = false,
+                    currentMasterAddress = null
                 )
             }
         }.launchIn(viewModelScope)

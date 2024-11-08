@@ -10,6 +10,7 @@ data class BluetoothUiState(
     val pairedDevices: List<BluetoothDevice> = emptyList(),
     val connectedDevices: List<BluetoothDevice> = emptyList(),
     val interactionLog: Map<String, List<String>> = emptyMap(),
+    val currentMasterAddress: String? = null,
     val isServerOpen: Boolean = false,
     val isConnected: Boolean = false,
     val isConnecting: Boolean = false,

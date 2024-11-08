@@ -75,14 +75,17 @@ class ChannelViewModel(
             repository.upsertChannel(channel)
             _channelList.value = repository.allChannels().first()
         }
-
-
-
     }
 
     fun deleteChannels() {
         viewModelScope.launch {
             repository.deleteAllChannels()
+        }
+    }
+
+    fun updateAllMasterTimestamps(isMaster: Boolean) {
+        viewModelScope.launch {
+            repository.updateAllMasterTimestamps(isMaster)
         }
     }
 }
