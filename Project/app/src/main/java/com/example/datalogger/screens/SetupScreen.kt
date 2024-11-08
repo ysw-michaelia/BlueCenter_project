@@ -1,6 +1,7 @@
 package com.example.datalogger.screens
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -103,7 +104,7 @@ fun SetupScreen(
                 )
                 Text("Slave Timestamp")
             }
-            MasterSetupPart(viewModel, navController)
+            MasterSetupPart(viewModel, navController, role = selectedRole, timestamp = selectedTimeStamp)
         } else {
             Text(
                 text = "Step 2: Slave Configuration",
@@ -112,20 +113,8 @@ fun SetupScreen(
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
             Text("Fill in the required number of channels")
-            SlaveSetupPart(viewModel, navController, channelViewModel, selectedTimeStamp)
+            SlaveSetupPart(viewModel, navController, role = selectedRole)
         }
-    }
-
-    Button(
-        onClick = {
-            val role = selectedRole
-            val timestamp = selectedTimeStamp
-
-            saveConfiguration(context, role, timestamp)
-        },
-        modifier = Modifier.padding(top = 40.dp, start = 100.dp)
-    ) {
-        Text(text = "Save settings")
     }
 }
 
@@ -133,10 +122,11 @@ fun SetupScreen(
 fun SlaveSetupPart(
     viewModel: SetupViewModel,
     navController: NavController,
-    channelViewModel: ChannelViewModel,
-    selectedTimeStamp: String,
+    role: String = "Slave",
+    context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
+    val timestamp = "null"
     //holds the number of channels entered by the user
     var numberOfChannels by remember { mutableStateOf("") }
     //text field for number of channels insertion
@@ -163,9 +153,11 @@ fun SlaveSetupPart(
             //navigate to home screen
             navController.navigate("slave_home")
 
-            if (selectedTimeStamp == "Master Timestamp") {
-                channelViewModel.updateAllMasterTimestamps(true)
-            }
+            saveConfiguration(context, role, timestamp, numberOfChannels)
+
+//            if (selectedTimeStamp == "Master Timestamp") {
+//                channelViewModel.updateAllMasterTimestamps(true)
+//            }
         },
         enabled = isButtonEnabled //enable or disable button depending on user input
     ) {
@@ -177,8 +169,12 @@ fun SlaveSetupPart(
 fun MasterSetupPart(
     viewModel: SetupViewModel,
     navController: NavController,
+    role: String = "Master",
+    timestamp: String,
+    context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
+    val numberOfChannels = "null"
     Button(
         onClick = {
             //save setup as completed in shared preferences
@@ -187,6 +183,8 @@ fun MasterSetupPart(
             viewModel.setMaster(true)
             //navigate to home screen
             navController.navigate("master_home")
+
+            saveConfiguration(context, role, timestamp, numberOfChannels)
         }
     ) {
         Text(text = "Done!")
@@ -196,8 +194,9 @@ fun MasterSetupPart(
 private var fileIndex = 1
 
 // Method to create and write data to the file
-fun saveConfiguration(context: Context, role: String, timestamp: String) {
-    val fileName = "configuration_$fileIndex.txt"
+fun saveConfiguration(context: Context, role: String, timestamp: String, numberOfChannels: String) {
+    Log.d("saveConfiguration", "saveConfiguration called")
+    val fileName = "configuration_${role}_$fileIndex.txt"
 
     // Get the app's internal storage directory
     val file = File(context.filesDir, fileName)
@@ -206,7 +205,7 @@ fun saveConfiguration(context: Context, role: String, timestamp: String) {
     val fileOutputStream = FileOutputStream(file, true)
 
     // Format the data to be written
-    val formattedData = "role $role\n timestamp $timestamp\n"
+    val formattedData = "role $role\ntimestamp $timestamp\nnumberOfChannels $numberOfChannels\n"
 
     // Write the data to the file
     fileOutputStream.write(formattedData.toByteArray())
