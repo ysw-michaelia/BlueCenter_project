@@ -33,6 +33,7 @@ import javax.inject.Inject
 class BluetoothViewModel (application: Application): AndroidViewModel(application) {
     private val sensorViewModel = SensorViewModel(application)
 
+    //callback for when a device disconnects
     private val clientDisconnect: (address: String) -> Unit = { address ->
         _state.update { currentState ->
             // Create new maps to hold the updated state
@@ -103,6 +104,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
         }
     }
 
+    //connect to device
     fun connectToDevice(device: BluetoothDeviceDomain) {
         _state.update { it.copy(isConnecting = true) }
         bluetoothController
@@ -110,6 +112,7 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
             .listen()
     }
 
+    //disconnect from device
     fun disconnectFromDevice() {
         deviceConnectionJob?.cancel()
         bluetoothController.closeConnection()

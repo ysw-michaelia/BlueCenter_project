@@ -24,11 +24,13 @@ class PreferencesManager(context: Context) {
         return sharedPreferences.getBoolean("isSetupCompleted", false)
     }
 
+    //function to set the boolean value to check if master
     fun setMaster(isMaster: Boolean) {
         editor.putBoolean("isMaster", isMaster)
         editor.apply()
     }
 
+    //"get" function for isMaster
     fun isMaster(): Boolean {
         return sharedPreferences.getBoolean("isMaster", false)
     }

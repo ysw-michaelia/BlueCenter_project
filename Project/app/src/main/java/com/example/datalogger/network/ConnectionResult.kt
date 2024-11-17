@@ -2,6 +2,7 @@ package com.example.datalogger.network
 
 import java.io.File
 
+//sealed interface for the connection result
 sealed interface ConnectionResult {
     data class ConnectionEstablished(val deviceAddress: String): ConnectionResult
     data class StringReceived(val message: String, val deviceAddress: String): ConnectionResult

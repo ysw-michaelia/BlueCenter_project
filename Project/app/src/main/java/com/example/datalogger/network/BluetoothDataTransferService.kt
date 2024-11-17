@@ -11,12 +11,14 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
+//implementation of the bluetooth data transfer service
 class BluetoothDataTransferService(
     private val socket: BluetoothSocket,
     private val context: Context,
     private val commandInterpreter: CommandInterpreter,
     private val disconnectionCallback: (socket: BluetoothSocket) -> Unit
 ) {
+    //it listens for incoming string
     fun listenForIncomingString(): Flow<String> {
         return flow {
             if (!socket.isConnected) {
@@ -41,6 +43,7 @@ class BluetoothDataTransferService(
         }.flowOn(Dispatchers.IO)
     }
 
+    //it listens for incoming command
     fun listenForIncomingCommand(): Flow<String> {
         return flow {
             if (!socket.isConnected) {
@@ -70,6 +73,7 @@ class BluetoothDataTransferService(
         }.flowOn(Dispatchers.IO)
     }
 
+    //it handles the command
     private suspend fun handleCommand(command: String) {
         val responses = commandInterpreter.interpret(command)
 
@@ -94,6 +98,7 @@ class BluetoothDataTransferService(
         }
     }
 
+    //it sends a string
     suspend fun sendString(bytes: ByteArray): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -107,6 +112,7 @@ class BluetoothDataTransferService(
         }
     }
 
+    //it listens for incoming file
     fun listenForIncomingFile(): Flow<File> = flow {
         if (!socket.isConnected) return@flow
         val buffer = ByteArray(4096)
@@ -133,6 +139,7 @@ class BluetoothDataTransferService(
     }.flowOn(Dispatchers.IO)
 
 
+    //it gets the fileName
     fun getUniqueFileName(baseName: String, extension: String): File {
         val directory = File(context.filesDir, "") // Adjust directory as needed
         var counter = 1
@@ -145,8 +152,7 @@ class BluetoothDataTransferService(
         return file
     }
 
-
-
+    //it sends file
     suspend fun sendFile(file: File): Boolean {
         return withContext(Dispatchers.IO) {
             try {

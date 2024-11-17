@@ -21,6 +21,7 @@ class CommandInterpreter(
     private val sensorViewModel: SensorViewModel
 ) {
 
+    //it interprets the command and returns the response
     fun interpret(command: String): MutableList<String> {
         val commandType = command.take(2)
         val parameters = command.drop(3)
@@ -44,12 +45,14 @@ class CommandInterpreter(
         }
     }
 
+    //it sets the sampling rate
     private fun setNumberOfSamples(params: String): MutableList<String> {
         val samples = params.toIntOrNull() ?: return mutableListOf("Error: Invalid sample number")
         sensorViewModel.setSamples(samples)
         return mutableListOf("SAMPLES=$samples\nOK")
     }
 
+    //it samples the data and transfers it
     private fun sampleAndTransferData(): MutableList<String> = runBlocking {
         var channels: List<Channel>
         runBlocking(Dispatchers.IO) { channels = repository.getActiveChannelWithSensor().first() }
@@ -97,10 +100,12 @@ class CommandInterpreter(
             sampledData
     }
 
+    //it sends sampled data
     private fun sendSampledData(): MutableList<String> {
         return mutableListOf("SEND FILES")
     }
 
+    //it shows device status
     private fun showDeviceStatus(): MutableList<String> {
         val responseMessages = mutableListOf<String>()
         val samples = sensorViewModel.samples.value
@@ -118,6 +123,7 @@ class CommandInterpreter(
         return responseMessages
     }
 
+    //it display the time
     @SuppressLint("NewApi")
     private fun displayTime(): MutableList<String> {
         val currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
@@ -125,6 +131,7 @@ class CommandInterpreter(
 
     }
 
+    //it sets the active channels
     private fun setActiveChannels(params: String): MutableList<String> {
         val responseMessages = mutableListOf<String>()
         val channelIds = params.split(":").mapNotNull { it.toIntOrNull() }
@@ -161,6 +168,7 @@ class CommandInterpreter(
         return responseMessages
     }
 
+    //it shows the version of the datalog
     private fun showVersion(): MutableList<String> {
         return mutableListOf("DataLogger App Version: 1.0.0\nOK")
     }

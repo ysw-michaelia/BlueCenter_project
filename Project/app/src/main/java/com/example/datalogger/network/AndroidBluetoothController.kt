@@ -45,10 +45,12 @@ class AndroidBluetoothController(
         context.getSystemService(BluetoothManager::class.java)
     }
 
+    //adapter for bluetooth
     private val bluetoothAdapter by lazy {
         bluetoothManager?.adapter
     }
 
+    //interpreter for commands
     private val commandInterpeter = CommandInterpreter(sensorViewModel)
 
     //it checks if the device is connected
@@ -61,6 +63,7 @@ class AndroidBluetoothController(
     override val scanDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _scannedDevices.asStateFlow()
 
+    //it saves all active connections (used only on master)
     private val activeConnections = mutableMapOf<String, BluetoothSocket>()
 
     //it saves all paired devices (used only on slave)
@@ -73,6 +76,7 @@ class AndroidBluetoothController(
     override val connectedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _connectedDevices.asStateFlow()
 
+    //it saves all connected devices (used only on master)
     private val onClientDisconnect: (socket: BluetoothSocket) -> Unit = { socket->
         connectedClients.remove(socket)
         _connectedDevices.update { currentDevices ->
@@ -89,6 +93,7 @@ class AndroidBluetoothController(
         }
     }
 
+    //it saves all data transfer services (used only on master)
     private val dataTransferServices = mutableMapOf<String, BluetoothDataTransferService>()
 
     //actual clients (sockets) connected
@@ -107,7 +112,7 @@ class AndroidBluetoothController(
         }
     }
 
-
+    //whenever a device is connected
     private val bluetoothStateReceiver = BluetoothStateReceiver { isConnected, bluetoothDevice ->
         if(bluetoothAdapter?.bondedDevices?.contains(bluetoothDevice) == true) {
             _isConnected.update { isConnected }

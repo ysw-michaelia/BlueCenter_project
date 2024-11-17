@@ -10,10 +10,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+// Controller for sensors
 class SensorController(private val context: Context) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val activeSensorListeners = mutableMapOf<Int, Pair<SensorEventListener, Int>>()
 
+    // Get a sensor by type
     fun getSensorByType(sensorType: Int): Sensor? {
         return sensorManager.getDefaultSensor(sensorType)
     }
@@ -52,6 +54,7 @@ class SensorController(private val context: Context) {
         }
     }
 
+    // Stop recording for all sensors
     fun stopAllSensors() {
         for ((sensorType, listenerCountPair) in activeSensorListeners) {
             val (listener, count) = listenerCountPair

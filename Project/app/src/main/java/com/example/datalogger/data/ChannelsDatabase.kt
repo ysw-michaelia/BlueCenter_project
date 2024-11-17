@@ -35,12 +35,14 @@ abstract class ChannelsDatabase : RoomDatabase() {
             }
         }
 
+        // Migration from version 3 to 4
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE Channel ADD COLUMN isStatic INTEGER DEFAULT 0 NOT NULL")
             }
         }
 
+        // Migration from version 4 to 5
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE Channel ADD COLUMN isStatic INTEGER DEFAULT 0 NOT NULL; ADD COLUMN staticValue FLOAT DEFAULT 0 NOT NULL")

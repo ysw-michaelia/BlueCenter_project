@@ -76,6 +76,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
 
     }
 
+    //register and start monitoring for a given sensor type
     private fun registerAndStartMonitoring(sensorType: Int) {
         Log.d("SensorViewModel", "Registering sampling for sensor type: $sensorType")
         val sensor = sensorController.getSensorByType(sensorType)
@@ -88,6 +89,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    //handle sensor data for a given sensor type
     fun handleSensorData(sensorType: Int, sensor2: Int) {
         Log.d("SensorViewModel", "Current sensor type: $currentSensorType")
         val isSampling = _isSamplingRequested.value
@@ -139,6 +141,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    //start and stop logging for a given channel
     @SuppressLint("NewApi")
     fun timeChecking(channelId: Int) {
         viewModelScope.launch {
@@ -188,6 +191,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    //handle logging for a given channel and sensor type
     private fun handleSensorLogging(channelName: String, sensorType: Int) {
         sensorLogFileManager.createFile(channelName)
         Log.d("SensorLogging", "Channel Name: $channelName")
@@ -202,6 +206,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    //trigger level checking for a given channel and trigger level
     fun triggerLevelChecking(channelId: Int, triggerLevel: Float) {
         viewModelScope.launch {
             val channel = channelRepository.getChannelById(channelId).firstOrNull()

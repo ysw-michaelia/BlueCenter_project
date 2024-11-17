@@ -8,6 +8,7 @@ import com.example.datalogger.data.console.BluetoothCommand
 //interface for bluetooth controller that will be implemented by AndroidBluetoothController
 interface BluetoothController {
 
+    //states of the bluetooth controller
     val isConnected: StateFlow<Boolean>
     val scanDevices: StateFlow<List<BluetoothDevice>>
     val pairedDevices: StateFlow<List<BluetoothDevice>>

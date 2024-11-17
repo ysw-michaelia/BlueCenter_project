@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+//file manager for sensors
 class SensorLogFileManager(private val context: Context) {
     private var file: File? = null
     private var fileOutputStream: FileOutputStream? = null
