@@ -204,12 +204,12 @@ class BluetoothViewModel (application: Application): AndroidViewModel(applicatio
                     val slaveName = bluetoothController.connectedDevices.value.find { it.address == result.deviceAddress }?.name ?: "Slave"
                     _state.update { currentState->
                         val currentInteractionLog = currentState.interactionLog[result.deviceAddress] ?: emptyList()
-
+                        val currentReceivedMessages = currentState.receivedMessages[result.deviceAddress] ?: emptyList()
                         val message = result.message
 
                         // Add the new message to the list for that device
                         val updatedInteractionLog = currentInteractionLog + "$slaveName: \n$message"
-                        val updatedReceivedMessages = mutableListOf(message)
+                        val updatedReceivedMessages = currentReceivedMessages + message
 
                         val updatedInteractionLogMap = currentState.interactionLog.toMutableMap().apply {
                             this[result.deviceAddress] = updatedInteractionLog

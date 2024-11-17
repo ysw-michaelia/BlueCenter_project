@@ -28,6 +28,8 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
     private val channelRepository: ChannelRepository = DatabaseModule.repository
     private val sensorDataList = mutableListOf<String>()  //save sampling data
 
+    private val delayForTrigger: Int = 5000
+
     private val _currentSensorType = MutableStateFlow<Int?>(null)
     val currentSensorType: StateFlow<Int?>
         get() = _currentSensorType
@@ -226,7 +228,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
                         startTime = System.currentTimeMillis()
                     }
 
-                    if (!isLoggingStarted && System.currentTimeMillis() - startTime >= 5000) {
+                    if (!isLoggingStarted && System.currentTimeMillis() - startTime >= delayForTrigger) {
                         sensorLogFileManager.createFile(channel.name)
                         sensorLogFileManager.startLogging(data.joinToString(", "))
                         isLoggingStarted = true
@@ -234,7 +236,7 @@ class SensorViewModel(application: Application): AndroidViewModel(application) {
                     }
 
                 } else {
-                    if (isLoggingStarted && System.currentTimeMillis() - startTime >= 5000) {
+                    if (isLoggingStarted && System.currentTimeMillis() - startTime >= delayForTrigger) {
                         sensorLogFileManager.stopLogging()
                         sensorLogFileManager.saveFile()
                         isLoggingStopped = true
